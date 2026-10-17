@@ -20,6 +20,7 @@
         <p>Dokumen ini belum menyatakan lapak terkonfirmasi.</p>
     @endif
     <p>{{ $registration->applicant->business_name }} — {{ $registration->applicant->full_name }}</p>
+    <p>NIK {{ $registration->applicant->nik }}</p>
     <table>
         <tr><th>Lapak</th><th>Zona</th><th>Ukuran</th><th>Tenda</th><th>Nominal</th></tr>
         @foreach ($registration->items as $item)

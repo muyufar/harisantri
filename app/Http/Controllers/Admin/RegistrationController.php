@@ -28,7 +28,8 @@ class RegistrationController extends AdminController
                         ->orWhere('whatsapp', 'like', '%'.$digits.'%')
                         ->orWhereHas('applicant', fn ($applicant) => $applicant
                             ->where('business_name', 'like', $like)
-                            ->orWhere('full_name', 'like', $like))
+                            ->orWhere('full_name', 'like', $like)
+                            ->orWhere('nik', 'like', $like))
                         ->orWhereHas('items', fn ($items) => $items->where('booth_code', 'like', $like));
                 });
             })

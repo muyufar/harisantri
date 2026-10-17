@@ -20,6 +20,7 @@ abstract class HsnTestCase extends TestCase
     {
         return [
             'full_name' => 'Siti Aminah',
+            'nik' => '3308123456789001',
             'business_name' => $business,
             'whatsapp' => $phone,
             'email' => null,

@@ -8,6 +8,7 @@
         <article class="rounded-2xl bg-white p-4 text-sm">
             <p class="font-semibold">{{ $registration->applicant->business_name }}</p>
             <p>{{ $registration->applicant->full_name }}</p>
+            <p>NIK {{ $registration->applicant->nik }}</p>
             <p>{{ \App\Support\Phone::display($registration->whatsapp) }}</p>
             <p>{{ $registration->applicant->email }}</p>
             <p class="mt-2">{{ $registration->applicant->address }}, {{ $registration->applicant->district }}, {{ $registration->applicant->regency }}</p>

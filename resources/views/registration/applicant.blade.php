@@ -16,6 +16,7 @@
                 @endif
                 @foreach ([
                     ['full_name', 'Nama lengkap penanggung jawab', 'text', true],
+                    ['nik', 'NIK penanggung jawab', 'text', true],
                     ['business_name', 'Nama usaha / brand', 'text', true],
                     ['whatsapp', 'Nomor WhatsApp aktif', 'tel', true],
                     ['email', 'Email (opsional)', 'email', false],
@@ -23,7 +24,7 @@
                 ] as [$name, $label, $type, $required])
                     <label class="block text-sm">
                         <span class="mb-1 block font-medium">{{ $label }}</span>
-                        <input class="w-full rounded-xl border border-slate-200 px-3 py-3" type="{{ $type }}" name="{{ $name }}" value="{{ old($name, $draft[$name] ?? '') }}" @required($required)>
+                        <input class="w-full rounded-xl border border-slate-200 px-3 py-3" type="{{ $type }}" name="{{ $name }}" value="{{ old($name, $draft[$name] ?? '') }}" @required($required) @if($name === 'nik') inputmode="numeric" maxlength="16" autocomplete="off" @endif>
                     </label>
                 @endforeach
                 <label class="block text-sm">

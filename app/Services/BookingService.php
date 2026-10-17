@@ -152,6 +152,7 @@ class BookingService
 
                 $applicant = Applicant::create([
                     'full_name' => $applicantData['full_name'],
+                    'nik' => $applicantData['nik'],
                     'business_name' => $applicantData['business_name'],
                     'whatsapp' => $phone,
                     'email' => $applicantData['email'] ?? null,

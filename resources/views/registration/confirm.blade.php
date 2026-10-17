@@ -8,7 +8,7 @@
         <h1 class="mt-2 text-3xl font-bold">Periksa pesanan</h1>
         <div class="mt-6 rounded-3xl bg-white p-5">
             <h2 class="font-semibold">{{ $applicant['business_name'] }}</h2>
-            <p class="text-sm text-slate-600">{{ $applicant['full_name'] }} · {{ \App\Support\Phone::display($applicant['whatsapp']) }}</p>
+            <p class="text-sm text-slate-600">{{ $applicant['full_name'] }} · NIK {{ $applicant['nik'] }} · {{ \App\Support\Phone::display($applicant['whatsapp']) }}</p>
             <p class="mt-2 text-sm">{{ $applicant['product_type'] }} — {{ $applicant['product_description'] }}</p>
             <p class="mt-2 text-sm text-slate-600">{{ $applicant['address'] }}, {{ $applicant['district'] }}, {{ $applicant['regency'] }}</p>
         </div>

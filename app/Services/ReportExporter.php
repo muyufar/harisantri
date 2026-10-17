@@ -52,7 +52,7 @@ class ReportExporter
 
     private function registrantRows(Event $event): array
     {
-        $rows = [['Kode', 'Usaha', 'Penanggung jawab', 'WhatsApp', 'Lapak', 'Tenda', 'Total', 'Status', 'Dibuat']];
+        $rows = [['Kode', 'Usaha', 'Penanggung jawab', 'NIK', 'WhatsApp', 'Lapak', 'Tenda', 'Total', 'Status', 'Dibuat']];
 
         Registration::query()
             ->with(['applicant', 'items'])
@@ -63,6 +63,7 @@ class ReportExporter
                     $registration->code,
                     $registration->applicant->business_name,
                     $registration->applicant->full_name,
+                    $registration->applicant->nik,
                     $registration->whatsapp,
                     $registration->items->pluck('booth_code')->join(', '),
                     $registration->items->where('with_tent', true)->count(),

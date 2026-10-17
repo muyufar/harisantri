@@ -14,10 +14,28 @@ class StoreApplicantRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $merge = [];
+
+        if ($this->has('whatsapp')) {
+            $merge['whatsapp'] = preg_replace('/\D+/', '', (string) $this->input('whatsapp')) ?? '';
+        }
+
+        if ($this->has('nik')) {
+            $merge['nik'] = preg_replace('/\D+/', '', (string) $this->input('nik')) ?? '';
+        }
+
+        if ($merge !== []) {
+            $this->merge($merge);
+        }
+    }
+
     public function rules(): array
     {
         return [
             'full_name' => ['required', 'string', 'max:120'],
+            'nik' => ['required', 'digits:16'],
             'business_name' => ['required', 'string', 'max:160'],
             'email' => ['nullable', 'email', 'max:160'],
             'address' => ['required', 'string', 'max:255'],
@@ -34,6 +52,7 @@ class StoreApplicantRequest extends FormRequest
     {
         return [
             'whatsapp.regex' => 'Masukkan nomor WhatsApp Indonesia yang aktif.',
+            'nik.digits' => 'NIK harus 16 digit angka.',
             'product_description.min' => 'Jelaskan produk yang dijual minimal 10 karakter.',
         ];
     }

@@ -9,6 +9,7 @@ class Applicant extends Model
 {
     protected $fillable = [
         'full_name',
+        'nik',
         'business_name',
         'whatsapp',
         'email',
