@@ -26,6 +26,7 @@ Route::get('/stan.json', BoothFeedController::class)->middleware('throttle:60,1'
 
 Route::middleware('throttle:register')->group(function () {
     Route::get('/daftar', [UmkmRegistrationController::class, 'create'])->name('register.create');
+    Route::get('/daftar/pemohon', fn () => redirect()->route('register.create'));
     Route::post('/daftar/pemohon', [UmkmRegistrationController::class, 'storeApplicant'])->name('register.applicant');
     Route::get('/daftar/stan', [UmkmRegistrationController::class, 'booths'])->name('register.booths');
     Route::post('/daftar/stan', [UmkmRegistrationController::class, 'storeBooths'])->name('register.booths.store');
