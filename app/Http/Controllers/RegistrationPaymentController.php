@@ -83,7 +83,7 @@ class RegistrationPaymentController extends Controller
         $path = $registration->payment?->proof_path;
         abort_unless($path && Storage::disk('local')->exists($path), 404);
 
-        return Storage::disk('local')->download($path);
+        return Storage::disk('local')->response($path);
     }
 
     public function logo(Registration $registration)

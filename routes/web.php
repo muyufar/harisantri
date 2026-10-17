@@ -63,6 +63,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/pendaftaran', [AdminRegistrationController::class, 'index'])->name('registrations.index');
             Route::get('/pendaftaran/{registration}', [AdminRegistrationController::class, 'show'])->name('registrations.show');
             Route::get('/pendaftaran/{registration}/logo', [RegistrationPaymentController::class, 'logo'])->name('registrations.logo');
+            Route::get('/pendaftaran/{registration}/bukti-bayar', [RegistrationPaymentController::class, 'proof'])->name('registrations.proof');
             Route::get('/pendaftaran/{registration}/pdf/{type}', [RegistrationPaymentController::class, 'pdf'])->name('registrations.pdf');
         });
 
@@ -73,7 +74,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('permission:payments.verify')->group(function () {
             Route::post('/pendaftaran/{registration}/terima', [AdminRegistrationController::class, 'approve'])->name('registrations.approve');
             Route::post('/pendaftaran/{registration}/tolak', [AdminRegistrationController::class, 'reject'])->name('registrations.reject');
-            Route::get('/pendaftaran/{registration}/bukti-bayar', [RegistrationPaymentController::class, 'proof'])->name('registrations.proof');
         });
 
         Route::middleware('permission:sponsorships.manage')->group(function () {

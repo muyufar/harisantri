@@ -27,7 +27,13 @@
             @endforeach
             <p>Pembayaran: {{ $registration->payment?->status->label() }}</p>
             @if ($registration->payment?->proof_path)
-                <a class="text-nu" href="{{ route('admin.registrations.proof', $registration) }}">Unduh bukti bayar</a>
+                @php($proofUrl = route('admin.registrations.proof', $registration))
+                <a class="mt-2 inline-flex rounded-xl bg-nu px-4 py-2 font-semibold text-white" href="{{ $proofUrl }}" target="_blank">Lihat bukti bayar</a>
+                @if (! str_ends_with(strtolower($registration->payment->proof_path), '.pdf'))
+                    <a class="mt-3 block" href="{{ $proofUrl }}" target="_blank">
+                        <img class="max-h-80 rounded-xl border border-slate-200" alt="Bukti pembayaran {{ $registration->code }}" src="{{ $proofUrl }}">
+                    </a>
+                @endif
             @endif
             @foreach ($registration->payment?->verifications ?? [] as $verification)
                 <p class="mt-2">{{ $verification->decision === 'approved' ? 'Diterima' : 'Ditolak' }} oleh {{ $verification->user->name }} @if($verification->reason) — {{ $verification->reason }} @endif</p>
