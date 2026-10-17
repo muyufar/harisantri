@@ -39,12 +39,15 @@
         @if ($registration->canUploadProof())
             <form method="POST" action="{{ URL::temporarySignedRoute('register.proof', now()->addDays(7), $registration) }}" enctype="multipart/form-data" class="mt-4 space-y-3" x-data="formState" @submit="sending = true">
                 @csrf
-                <label class="block text-sm">
+                <label class="block text-sm" x-data="{ name: '' }">
                     <span class="mb-1 block font-medium">Bukti pembayaran JPG, PNG, atau PDF</span>
-                    <input type="file" name="proof" accept="image/jpeg,image/png,application/pdf" required>
+                    <span class="relative mt-1 flex w-full cursor-pointer items-center justify-center rounded-xl border-2 border-gold bg-gold px-6 py-4 text-base font-semibold text-nu-dark">
+                        <span x-text="name || 'Pilih file bukti pembayaran'"></span>
+                        <input class="absolute inset-0 w-full cursor-pointer" style="opacity:0" type="file" name="proof" accept="image/jpeg,image/png,application/pdf" required @change="name = $event.target.files[0]?.name || ''">
+                    </span>
                 </label>
                 @error('proof')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
-                <button class="rounded-xl bg-nu px-5 py-3 font-semibold text-white" :class="sending && 'opacity-60'">Kirim bukti</button>
+                <button class="w-full rounded-xl bg-nu px-6 py-4 text-base font-semibold text-white shadow-sm" :class="sending && 'opacity-60'">Kirim bukti</button>
             </form>
         @endif
 
