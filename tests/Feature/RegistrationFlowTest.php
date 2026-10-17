@@ -107,6 +107,25 @@ class RegistrationFlowTest extends HsnTestCase
         $this->assertSame(SponsorshipStatus::NewRequest, $entry->status);
         $this->assertNull($entry->booth_id);
     }
+
+    public function test_payment_page_shows_qris_instead_of_bank_transfer(): void
+    {
+        $booth = Booth::query()->where('type', 'umkm')->firstOrFail();
+        $registration = app(\App\Services\BookingService::class)->create(Event(), $this->applicant(), [
+            ['booth_id' => $booth->id, 'with_tent' => false],
+        ]);
+
+        $this->assertSame('qris', $registration->payment->method);
+
+        $this->get(URL::temporarySignedRoute('register.payment', now()->addHour(), $registration))
+            ->assertOk()
+            ->assertSee('Bayar dengan QRIS')
+            ->assertSee('PCNU KAB MAGELANG')
+            ->assertSee('ID1026618538122')
+            ->assertSee('qris-pcnu-magelang.jpg')
+            ->assertDontSee('Transfer manual')
+            ->assertDontSee('Nomor rekening');
+    }
 }
 
 function Event(): \App\Models\Event

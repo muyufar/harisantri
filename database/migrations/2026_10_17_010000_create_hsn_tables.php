@@ -167,7 +167,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('registration_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('amount');
-            $table->string('method')->default('manual_transfer');
+            $table->string('method')->default('qris');
             $table->string('gateway')->default('manual');
             $table->string('status')->index();
             $table->string('proof_path')->nullable();

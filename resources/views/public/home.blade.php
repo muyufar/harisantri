@@ -88,7 +88,7 @@
                     'Isi data penanggung jawab dan usaha. Akun sandi tidak diperlukan.',
                     'Pilih lapak yang masih tersedia dari daftar. Tenda bersifat pilihan pada tiap slot.',
                     'Periksa ringkasan harga yang dihitung server, lalu setujui ketentuan.',
-                    'Transfer ke rekening panitia sebesar nominal yang tertera dan unggah bukti.',
+                    'Bayar lewat QRIS sebesar nominal yang tertera, lalu unggah bukti pembayaran.',
                     'Panitia menerima atau menolak pembayaran. Jika ditolak, bukti dapat diunggah ulang.',
                     'Bukti konfirmasi dan QR check-in terbit setelah pembayaran disetujui.',
                 ] as $step)

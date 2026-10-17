@@ -9,7 +9,7 @@ class ManualTransferGateway implements PaymentGateway
 {
     public function code(): string
     {
-        return 'manual';
+        return 'qris';
     }
 
     public function instructions(Registration $registration): array
@@ -18,12 +18,13 @@ class ManualTransferGateway implements PaymentGateway
 
         return [
             'gateway' => $this->code(),
-            'bank' => $config->get('bank_name'),
-            'account_number' => $config->get('bank_account_number'),
-            'account_holder' => $config->get('bank_account_holder'),
+            'merchant_name' => $config->get('qris_merchant_name', $config->get('bank_account_holder', 'PCNU Kabupaten Magelang')),
+            'nmid' => $config->get('qris_nmid', ''),
+            'terminal_id' => $config->get('qris_terminal_id', ''),
+            'image_url' => $config->qrisUrl(),
             'amount' => $registration->grand_total,
             'code' => $registration->code,
-            'note' => 'Cantumkan kode '.$registration->code.' pada berita transfer.',
+            'note' => 'Scan QRIS di aplikasi berlogo QRIS, bayar sebesar '.rupiah($registration->grand_total).', lalu unggah bukti. Cantumkan kode '.$registration->code.' pada catatan pembayaran jika tersedia.',
         ];
     }
 }

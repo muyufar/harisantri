@@ -17,15 +17,26 @@
                 </article>
             @endforeach
         </div>
-        <p class="mt-4 text-lg font-bold">Nominal transfer {{ rupiah($registration->grand_total) }}</p>
+        <p class="mt-4 text-lg font-bold">Nominal pembayaran {{ rupiah($registration->grand_total) }}</p>
 
         @if ($registration->status !== \App\Enums\RegistrationStatus::Confirmed)
             <div class="mt-4 rounded-3xl bg-white p-5 text-sm">
-                <p class="font-semibold">Transfer manual</p>
-                <p class="mt-2">Bank: {{ $instructions['bank'] }}</p>
-                <p>Nomor rekening: {{ $instructions['account_number'] }}</p>
-                <p>Atas nama: {{ $instructions['account_holder'] }}</p>
-                <p class="mt-2">{{ $instructions['note'] }}</p>
+                <p class="font-semibold">Bayar dengan QRIS</p>
+                <p class="mt-1 text-slate-600">{{ $instructions['merchant_name'] }}</p>
+                @if ($instructions['nmid'])
+                    <p class="mt-1 text-xs text-slate-500">NMID {{ $instructions['nmid'] }}@if ($instructions['terminal_id']) · Terminal {{ $instructions['terminal_id'] }}@endif</p>
+                @endif
+                <img
+                    class="mx-auto mt-4 w-full max-w-sm rounded-2xl border border-slate-100"
+                    alt="QRIS {{ $instructions['merchant_name'] }}"
+                    src="{{ $instructions['image_url'] }}"
+                >
+                <ol class="mt-4 list-decimal space-y-1 pl-5 text-slate-700">
+                    <li>Buka aplikasi berlogo QRIS (mobile banking atau e-wallet).</li>
+                    <li>Scan kode di atas, cek nama merchant, lalu bayar {{ rupiah($registration->grand_total) }}.</li>
+                    <li>Unggah bukti pembayaran di formulir di bawah.</li>
+                </ol>
+                <p class="mt-3">{{ $instructions['note'] }}</p>
                 @if ($registration->hold_expires_at && $registration->canUploadProof())
                     <p class="mt-2">Batas unggah bukti: {{ $registration->hold_expires_at->timezone('Asia/Jakarta')->translatedFormat('l, j F Y H.i') }} WIB.</p>
                 @endif

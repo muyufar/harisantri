@@ -76,6 +76,19 @@ class EventConfig
         return asset('images/denah-acara.jpg').'?v='.(is_file($file) ? filemtime($file) : 1);
     }
 
+    public function qrisUrl(): string
+    {
+        $path = $this->get('qris_path');
+
+        if ($path) {
+            return asset('storage/'.$path);
+        }
+
+        $file = public_path('images/qris-pcnu-magelang.jpg');
+
+        return asset('images/qris-pcnu-magelang.jpg').'?v='.(is_file($file) ? filemtime($file) : 1);
+    }
+
     public function event(): Event
     {
         return $this->event;

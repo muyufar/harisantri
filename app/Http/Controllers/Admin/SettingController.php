@@ -45,9 +45,9 @@ class SettingController extends AdminController
             'instagram_url' => ['nullable', 'url', 'max:200'],
             'facebook_url' => ['nullable', 'url', 'max:200'],
             'youtube_url' => ['nullable', 'url', 'max:200'],
-            'bank_name' => ['required', 'string', 'max:80'],
-            'bank_account_number' => ['required', 'string', 'max:40'],
-            'bank_account_holder' => ['required', 'string', 'max:120'],
+            'qris_merchant_name' => ['required', 'string', 'max:120'],
+            'qris_nmid' => ['required', 'string', 'max:40'],
+            'qris_terminal_id' => ['nullable', 'string', 'max:20'],
             'terms' => ['required', 'string', 'max:8000'],
             'cancellation_policy' => ['required', 'string', 'max:4000'],
             'refund_policy' => ['required', 'string', 'max:4000'],
@@ -56,6 +56,7 @@ class SettingController extends AdminController
             'faqs.*.answer' => ['nullable', 'string', 'max:1000'],
             'logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
             'floorplan' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+            'qris' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
         $event->update([
@@ -83,16 +84,16 @@ class SettingController extends AdminController
             'instagram_url' => $data['instagram_url'] ?? '',
             'facebook_url' => $data['facebook_url'] ?? '',
             'youtube_url' => $data['youtube_url'] ?? '',
-            'bank_name' => $data['bank_name'],
-            'bank_account_number' => $data['bank_account_number'],
-            'bank_account_holder' => $data['bank_account_holder'],
+            'qris_merchant_name' => $data['qris_merchant_name'],
+            'qris_nmid' => $data['qris_nmid'],
+            'qris_terminal_id' => $data['qris_terminal_id'] ?? '',
             'terms' => $data['terms'],
             'cancellation_policy' => $data['cancellation_policy'],
             'refund_policy' => $data['refund_policy'],
             'faqs' => json_encode($faqs, JSON_UNESCAPED_UNICODE),
         ];
 
-        foreach (['logo' => 'logo_path', 'floorplan' => 'floorplan_path'] as $input => $key) {
+        foreach (['logo' => 'logo_path', 'floorplan' => 'floorplan_path', 'qris' => 'qris_path'] as $input => $key) {
             if ($request->hasFile($input)) {
                 $old = $event->config()->get($key);
                 if ($old) {

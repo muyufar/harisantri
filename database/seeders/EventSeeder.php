@@ -41,9 +41,9 @@ class EventSeeder extends Seeder
             'instagram_url' => '',
             'facebook_url' => '',
             'youtube_url' => '',
-            'bank_name' => 'Bank Syariah Indonesia',
-            'bank_account_number' => '0000000000',
-            'bank_account_holder' => 'PCNU Kabupaten Magelang',
+            'qris_merchant_name' => 'PCNU KAB MAGELANG',
+            'qris_nmid' => 'ID1026618538122',
+            'qris_terminal_id' => 'A01',
             'terms' => "Pendaftar memilih slot yang masih tersedia, maksimal 3 slot untuk satu nomor WhatsApp, termasuk pesanan yang masih berjalan.\nHarga dihitung panitia dari data harga yang berlaku dan tidak mengikuti nominal yang diubah di peramban.\nSlot ditahan selama masa berlaku yang ditetapkan panitia. Jika bukti pembayaran belum masuk sampai batas waktu, slot dilepas.\nJika bukti sudah diunggah, slot tetap ditahan sampai panitia selesai memeriksa.\nBukti lapak terkonfirmasi diterbitkan setelah pembayaran disetujui.",
             'cancellation_policy' => 'Pembatalan dilakukan panitia. Slot yang dibatalkan kembali tersedia untuk pendaftar lain. Kebijakan ini dapat diperbarui panitia melalui dashboard.',
             'refund_policy' => 'Pengembalian dana dilakukan manual oleh panitia keuangan apabila pembayaran sudah masuk dan pendaftaran dibatalkan. Sistem hanya mencatat status refund, tidak memindahkan dana secara otomatis.',
@@ -65,8 +65,12 @@ class EventSeeder extends Seeder
                     'answer' => 'Calon sponsor mengajukan formulir tanpa harga otomatis. Panitia menghubungi, menawar harga, lalu menetapkan lokasi.',
                 ],
                 [
+                    'question' => 'Bagaimana cara bayar?',
+                    'answer' => 'Bayar lewat QRIS pada halaman pembayaran. Scan dengan aplikasi berlogo QRIS, lalu unggah bukti transaksi.',
+                ],
+                [
                     'question' => 'Kapan lapak dinyatakan pasti?',
-                    'answer' => 'Setelah panitia menyetujui bukti transfer. Sebelum itu, status masih menunggu pembayaran atau verifikasi.',
+                    'answer' => 'Setelah panitia menyetujui bukti pembayaran QRIS. Sebelum itu, status masih menunggu pembayaran atau verifikasi.',
                 ],
             ], JSON_UNESCAPED_UNICODE),
         ];

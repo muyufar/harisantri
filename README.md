@@ -1,6 +1,6 @@
 # HSN 2026 — Pendaftaran Lapak UMKM & Sponsorship
 
-Aplikasi pendaftaran lapak untuk Hari Santri Nasional PCNU Kabupaten Magelang 2026. Pelaku UMKM mendaftar tanpa akun sandi. Sponsorship diajukan tanpa harga otomatis. Panitia mengelola slot, denah, pembayaran transfer, laporan, dan check-in QR.
+Aplikasi pendaftaran lapak untuk Hari Santri Nasional PCNU Kabupaten Magelang 2026. Pelaku UMKM mendaftar tanpa akun sandi. Sponsorship diajukan tanpa harga otomatis. Panitia mengelola slot, denah, pembayaran QRIS, laporan, dan check-in QR.
 
 Stack: Laravel 12, MySQL, Tailwind CSS, Alpine.js. Zona waktu `Asia/Jakarta`.
 
@@ -17,7 +17,7 @@ Seeder membuat akun pengembangan. **Ganti kata sandi sebelum server dapat diakse
 
 Kata sandi awal: nilai `ADMIN_SEED_PASSWORD` di `.env`, atau `ChangeMe!HSN2026` jika variabel itu kosong.
 
-Rekening `0000000000` dan nomor WhatsApp panitia juga bawaan. Logo bawaan adalah lambang Nahdlatul Ulama. Logo pengganti serta denah acara diunggah lewat menu **Informasi event**. Posisi lapak di denah awal hanya titik mulai; geser lewat **Editor peta** sesuai lapangan.
+QRIS PCNU Kabupaten Magelang (NMID `ID1026618538122`) dan nomor WhatsApp panitia juga bawaan. Logo bawaan adalah lambang Nahdlatul Ulama. Logo, denah, serta gambar QRIS pengganti diunggah lewat menu **Informasi event**. Posisi lapak di denah awal hanya titik mulai; geser lewat **Editor peta** sesuai lapangan.
 
 ## Instalasi lokal
 
@@ -96,7 +96,7 @@ mysql -h 127.0.0.1 -u pengguna harisantri < cadangan.sql
 6. `php artisan key:generate`, `php artisan migrate --force --seed` hanya pada instalasi pertama.
 7. `php artisan storage:link`
 8. Izin tulis untuk `storage/` dan `bootstrap/cache/`.
-9. Ganti sandi seeder, rekening, dan nomor WhatsApp.
+9. Ganti sandi seeder, gambar/NMID QRIS, dan nomor WhatsApp.
 10. Pasang cron `schedule:run`.
 11. `php artisan config:cache && php artisan route:cache && php artisan view:cache`
 
@@ -104,7 +104,7 @@ Bukti pembayaran disimpan di disk privat `storage/app/private/payment-proofs`, t
 
 ## Pembayaran
 
-Versi ini transfer manual. `App\Contracts\PaymentGateway` dan kolom `payments.gateway` menyiapkan penyambung QRIS atau payment gateway resmi berikutnya tanpa mengubah snapshot nominal pesanan.
+Versi ini memakai QRIS statis (scan + unggah bukti). Merchant bawaan: PCNU KAB MAGELANG, NMID `ID1026618538122`, Terminal `A01`. Gambar QRIS bawaan ada di `public/images/qris-pcnu-magelang.jpg` dan dapat diganti lewat **Informasi event**. `App\Contracts\PaymentGateway` tetap membuka jalan ke payment gateway otomatis berikutnya tanpa mengubah snapshot nominal pesanan.
 
 ## Pengujian
 

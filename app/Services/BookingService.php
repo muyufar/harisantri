@@ -208,7 +208,7 @@ class BookingService
                 Payment::create([
                     'registration_id' => $registration->id,
                     'amount' => $registration->grand_total,
-                    'method' => 'manual_transfer',
+                    'method' => 'qris',
                     'gateway' => 'manual',
                     'status' => PaymentStatus::Pending,
                 ]);
