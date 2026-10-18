@@ -9,7 +9,7 @@
         @unless ($open)
             <p class="mt-4 rounded-xl bg-gold-soft px-4 py-3 text-sm">Pendaftaran sudah ditutup.</p>
         @else
-            <form method="POST" action="{{ route('register.applicant') }}" enctype="multipart/form-data" class="mt-6 space-y-4" x-data="{ sending: false, preparing: false }" @submit="if (preparing) { $event.preventDefault() } else { sending = true }">
+            <form method="POST" action="{{ route('register.applicant') }}" enctype="multipart/form-data" class="mt-6 space-y-4" x-data="{ preparing: false }" @submit="preparing && $event.preventDefault()">
                 @csrf
                 @if ($errors->any())
                     <div class="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
@@ -69,9 +69,7 @@
                     <span class="mb-1 block font-medium">Catatan kebutuhan khusus</span>
                     <textarea class="w-full rounded-xl border border-slate-200 px-3 py-3" name="special_notes" rows="3">{{ old('special_notes', $draft['special_notes'] ?? '') }}</textarea>
                 </label>
-                <button type="submit" class="w-full rounded-xl bg-nu px-5 py-3 font-semibold text-white" :class="(sending || preparing) && 'pointer-events-none opacity-60'">
-                    <span x-text="preparing ? 'Menyiapkan foto...' : (sending ? 'Mengirim data...' : 'Lanjut pilih lapak')">Lanjut pilih lapak</span>
-                </button>
+                <button type="submit" class="w-full rounded-xl bg-nu px-5 py-3 font-semibold text-white" :class="preparing && 'pointer-events-none opacity-60'">Lanjut pilih lapak</button>
             </form>
         @endunless
     </section>

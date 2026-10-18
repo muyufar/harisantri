@@ -49,7 +49,7 @@
         @endif
 
         @if ($registration->canUploadProof())
-            <form method="POST" action="{{ URL::temporarySignedRoute('register.proof', now()->addDays(7), $registration) }}" enctype="multipart/form-data" class="mt-4 space-y-3" x-data="{ sending: false, preparing: false }" @submit="if (preparing) { $event.preventDefault() } else { sending = true }">
+            <form method="POST" action="{{ URL::temporarySignedRoute('register.proof', now()->addDays(7), $registration) }}" enctype="multipart/form-data" class="mt-4 space-y-3" x-data="{ preparing: false }" @submit="preparing && $event.preventDefault()">
                 @csrf
                 <label class="block text-sm" x-data="{ name: '' }">
                     <span class="mb-1 block font-medium">Bukti pembayaran JPG, PNG, atau PDF</span>
@@ -60,9 +60,7 @@
                     <p class="mt-1 text-sm text-red-600" data-upload-note></p>
                 </label>
                 @error('proof')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
-                <button type="submit" class="w-full rounded-xl bg-nu px-6 py-4 text-base font-semibold text-white shadow-sm" :class="(sending || preparing) && 'pointer-events-none opacity-60'">
-                    <span x-text="preparing ? 'Menyiapkan bukti...' : (sending ? 'Mengirim bukti...' : 'Kirim bukti')">Kirim bukti</span>
-                </button>
+                <button type="submit" class="w-full rounded-xl bg-nu px-6 py-4 text-base font-semibold text-white shadow-sm" :class="preparing && 'pointer-events-none opacity-60'">Kirim bukti</button>
             </form>
         @endif
 
