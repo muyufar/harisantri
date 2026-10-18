@@ -49,19 +49,19 @@
         @endif
 
         @if ($registration->canUploadProof())
-            <form method="POST" action="{{ URL::temporarySignedRoute('register.proof', now()->addDays(7), $registration) }}" enctype="multipart/form-data" class="mt-4 space-y-3" x-data="formState" @submit.prevent="submitWithShrink($event, $el, 4)">
+            <form method="POST" action="{{ URL::temporarySignedRoute('register.proof', now()->addDays(7), $registration) }}" enctype="multipart/form-data" class="mt-4 space-y-3" x-data="{ sending: false, preparing: false }" @submit="if (preparing) { $event.preventDefault() } else { sending = true }">
                 @csrf
                 <label class="block text-sm" x-data="{ name: '' }">
                     <span class="mb-1 block font-medium">Bukti pembayaran JPG, PNG, atau PDF</span>
                     <span class="relative mt-1 flex w-full cursor-pointer items-center justify-center rounded-xl border-2 border-gold bg-gold px-6 py-4 text-base font-semibold text-nu-dark">
                         <span x-text="name || 'Pilih file bukti pembayaran'"></span>
-                        <input class="absolute inset-0 w-full cursor-pointer" style="opacity:0" type="file" name="proof" accept="image/jpeg,image/png,application/pdf" required @change="name = $event.target.files[0]?.name || ''">
+                        <input class="absolute inset-0 w-full cursor-pointer" style="opacity:0" type="file" name="proof" accept="image/jpeg,image/png,application/pdf" required @change="name = $event.target.files[0]?.name || ''; prepareUpload($event.target, 4)">
                     </span>
                     <p class="mt-1 text-sm text-red-600" data-upload-note></p>
                 </label>
                 @error('proof')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
-                <button type="submit" class="w-full rounded-xl bg-nu px-6 py-4 text-base font-semibold text-white shadow-sm" :disabled="sending" :class="sending && 'opacity-60'">
-                    <span x-text="sending ? 'Mengirim bukti...' : 'Kirim bukti'">Kirim bukti</span>
+                <button type="submit" class="w-full rounded-xl bg-nu px-6 py-4 text-base font-semibold text-white shadow-sm" :class="(sending || preparing) && 'pointer-events-none opacity-60'">
+                    <span x-text="preparing ? 'Menyiapkan bukti...' : (sending ? 'Mengirim bukti...' : 'Kirim bukti')">Kirim bukti</span>
                 </button>
             </form>
         @endif

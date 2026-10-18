@@ -99,37 +99,32 @@
             });
         };
 
-        window.submitWithShrink = async function (event, el, maxMb) {
-            const state = window.Alpine.$data(el);
-            if (state.sending) return;
-            const form = event.target;
-            if (!form.reportValidity()) return;
-
-            const note = form.querySelector('[data-upload-note]');
-            if (note) note.textContent = '';
-            state.sending = true;
-
-            const input = form.querySelector('input[type="file"]');
+        window.prepareUpload = async function (input, maxMb) {
+            const form = input && input.form;
+            const state = form && window.Alpine ? window.Alpine.$data(form) : null;
+            const note = form ? form.querySelector('[data-upload-note]') : null;
             const file = input && input.files ? input.files[0] : null;
-            if (file && window.shrinkImageFile) {
-                try {
-                    const smaller = await window.shrinkImageFile(file);
-                    if (smaller && smaller !== file && typeof DataTransfer !== 'undefined') {
-                        const transfer = new DataTransfer();
-                        transfer.items.add(smaller);
-                        input.files = transfer.files;
-                    }
-                } catch (error) {}
-            }
-
-            const ready = input && input.files ? input.files[0] : null;
-            if (ready && ready.size > maxMb * 1024 * 1024) {
-                state.sending = false;
-                if (note) note.textContent = 'Berkas masih lebih dari ' + maxMb + ' MB. Pilih gambar yang lebih kecil.';
+            if (note) note.textContent = '';
+            if (!file || !file.type || file.type.indexOf('image/') !== 0 || file.size < 400 * 1024) {
                 return;
             }
-
-            form.submit();
+            if (state) state.preparing = true;
+            try {
+                const smaller = await window.shrinkImageFile(file);
+                if (smaller && smaller.size > maxMb * 1024 * 1024) {
+                    input.value = '';
+                    if (note) note.textContent = 'Foto masih lebih dari ' + maxMb + ' MB. Pilih gambar yang lebih kecil.';
+                    return;
+                }
+                if (smaller && smaller !== file && typeof DataTransfer !== 'undefined') {
+                    const transfer = new DataTransfer();
+                    transfer.items.add(smaller);
+                    input.files = transfer.files;
+                }
+            } catch (error) {
+            } finally {
+                if (state) state.preparing = false;
+            }
         };
     </script>
 </body>
