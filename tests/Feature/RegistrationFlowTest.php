@@ -82,6 +82,21 @@ class RegistrationFlowTest extends HsnTestCase
         $this->assertFalse($registration->items()->firstOrFail()->with_tent);
     }
 
+    public function test_admin_registration_list_accepts_a_page_size(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.index', ['per_page' => 50]))
+            ->assertOk()
+            ->assertSee('value="50" selected', false);
+
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.index', ['per_page' => 15]))
+            ->assertOk()
+            ->assertSee('value="10" selected', false);
+    }
+
     public function test_status_lookup_hides_details_until_whatsapp_matches(): void
     {
         $booth = Booth::query()->where('type', 'umkm')->firstOrFail();

@@ -14,6 +14,10 @@ class RegistrationController extends AdminController
     public function index(Request $request)
     {
         $event = $this->event();
+        $perPage = (int) $request->integer('per_page', 10);
+        if (! in_array($perPage, [10, 50, 100, 200], true)) {
+            $perPage = 10;
+        }
         $term = trim($request->string('q')->toString());
         $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%';
 
@@ -34,7 +38,7 @@ class RegistrationController extends AdminController
                 });
             })
             ->latest()
-            ->paginate(15)
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('admin.registrations.index', [

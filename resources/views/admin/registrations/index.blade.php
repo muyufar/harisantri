@@ -10,6 +10,14 @@
                 <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
             @endforeach
         </select>
+        <label class="text-sm">
+            <span class="mb-1 block font-medium sm:sr-only">Tampil</span>
+            <select class="rounded-xl border border-slate-200 px-3 py-2" name="per_page" onchange="this.form.requestSubmit()">
+                @foreach ([10, 50, 100, 200] as $size)
+                    <option value="{{ $size }}" @selected($registrations->perPage() === $size)>{{ $size }} data</option>
+                @endforeach
+            </select>
+        </label>
         <button class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white">Cari</button>
     </form>
     <div class="mt-4 overflow-x-auto rounded-2xl bg-white">
