@@ -14,31 +14,27 @@ class StoreBoothSelectionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'booth_ids' => ['required', 'array', 'min:1'],
-            'booth_ids.*' => ['integer', 'distinct'],
-            'tents' => ['nullable', 'array'],
-            'tents.*' => ['nullable', 'boolean'],
+            'area_numbers' => ['required', 'array', 'min:1'],
+            'area_numbers.*' => ['integer', 'distinct', 'between:1,8'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'booth_ids.required' => 'Pilih minimal satu lapak yang masih tersedia.',
-            'booth_ids.min' => 'Pilih minimal satu lapak yang masih tersedia.',
+            'area_numbers.required' => 'Pilih minimal satu nomor area tenda (1–8).',
+            'area_numbers.min' => 'Pilih minimal satu nomor area tenda (1–8).',
+            'area_numbers.*.between' => 'Nomor area hanya 1 sampai 8.',
         ];
     }
 
-    /** @return array<int, array{booth_id: int, with_tent: bool}> */
-    public function selections(): array
+    /** @return array<int, int> */
+    public function areaNumbers(): array
     {
-        $tents = $this->input('tents', []);
-
-        return collect($this->input('booth_ids', []))
-            ->map(fn ($id) => [
-                'booth_id' => (int) $id,
-                'with_tent' => (bool) ($tents[$id] ?? false),
-            ])
+        return collect($this->input('area_numbers', []))
+            ->map(fn ($number) => (int) $number)
+            ->unique()
+            ->values()
             ->all();
     }
 }

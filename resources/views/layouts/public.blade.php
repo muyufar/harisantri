@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Pendaftaran Lapak UMKM & Sponsorship HSN 2026')</title>
-    <link rel="icon" href="{{ asset('images/logo-nu.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon-hari-santri.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -15,8 +15,8 @@
     <header class="sticky top-0 z-40 border-b border-nu/10 bg-white/95 backdrop-blur">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
             <a href="{{ route('home') }}" class="flex items-center gap-3">
-                <img src="{{ $event?->config()->logoUrl() ?? asset('images/logo-nu.png') }}" alt="Logo Nahdlatul Ulama, PCNU Kabupaten Magelang" class="h-14 w-auto">
-                <span class="hidden text-sm font-semibold leading-tight sm:block">HSN 2026<br><span class="font-medium text-slate-500">PCNU Kabupaten Magelang</span></span>
+                <img src="{{ $event?->config()->logoUrl() ?? asset('images/logo-nu.png') }}" alt="Logo Nahdlatul Ulama, PCNU Kabupaten Magelang" class="h-12 w-auto">
+                <img src="{{ asset('images/logo-hari-santri.png') }}" alt="Logo Hari Santri 2026" class="h-12 w-auto">
             </a>
             <button class="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold md:hidden" type="button" onclick="document.getElementById('nav').classList.toggle('hidden')">Menu</button>
             <nav id="nav" class="absolute left-0 right-0 top-full hidden border-b border-slate-200 bg-white px-4 py-3 md:static md:flex md:items-center md:gap-5 md:border-0 md:bg-transparent md:p-0">
@@ -42,7 +42,10 @@
     <footer class="mt-16 border-t border-slate-200 bg-nu-dark text-white">
         <div class="mx-auto grid max-w-6xl gap-6 px-4 py-10 md:grid-cols-3">
             <div>
-                <img src="{{ $event?->config()->logoUrl() ?? asset('images/logo-nu.png') }}" alt="" class="mb-3 h-12 w-auto">
+                <div class="mb-3 inline-flex items-center gap-3 rounded-2xl bg-white px-3 py-2">
+                    <img src="{{ $event?->config()->logoUrl() ?? asset('images/logo-nu.png') }}" alt="Logo Nahdlatul Ulama" class="h-12 w-auto">
+                    <img src="{{ asset('images/logo-hari-santri.png') }}" alt="Logo Hari Santri 2026" class="h-12 w-auto">
+                </div>
                 <p class="font-semibold">{{ $event?->organizer ?? 'PCNU Kabupaten Magelang' }}</p>
                 <p class="mt-2 text-sm text-white/80">{{ $event?->name ?? 'Hari Santri Nasional 2026' }}</p>
             </div>

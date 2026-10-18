@@ -74,8 +74,8 @@ class RegistrationController extends AdminController
             'refund' => ['nullable', 'boolean'],
         ]);
 
-        return $this->decide($registration, function () use ($registration, $payments, $data) {
-            $payments->cancel($registration, request()->user(), $data['note'] ?? null, $request->boolean('refund'));
+        return $this->decide($registration, function () use ($registration, $payments, $data, $request) {
+            $payments->cancel($registration, $request->user(), $data['note'] ?? null, $request->boolean('refund'));
         }, 'Pendaftaran dibatalkan dan slot dilepas.');
     }
 

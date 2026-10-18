@@ -65,10 +65,12 @@ class BookingService
             }
 
             $price = $this->pricing->forBooth($booth, $selection['with_tent']);
+            $area = $selection['area'] ?? (is_numeric($booth->zone?->code) ? (int) $booth->zone->code : null);
             $lines[] = [
                 'booth' => $booth,
                 'booth_id' => $booth->id,
-                'code' => $booth->code,
+                'area' => $area,
+                'code' => $area ? 'Kotak '.$area : $booth->code,
                 'zone' => $booth->zone?->name,
                 'size' => $booth->sizeLabel(),
                 'with_tent' => $selection['with_tent'],

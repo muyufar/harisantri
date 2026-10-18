@@ -14,6 +14,7 @@ class BoothFeedController extends Controller
 
         return response()->json([
             'booths' => $maps->present($event),
+            'areas' => $maps->areaCards($event),
             'stats' => $maps->stats($event),
         ]);
     }

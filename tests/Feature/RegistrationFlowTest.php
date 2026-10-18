@@ -20,15 +20,13 @@ class RegistrationFlowTest extends HsnTestCase
     public function test_public_registration_ignores_a_tampered_total_and_confirms_after_verification(): void
     {
         Storage::fake('local');
-        $booth = Booth::query()->where('size', '2x2')->firstOrFail();
 
         $this->post(route('register.applicant'), $this->applicant() + [
             'logo' => UploadedFile::fake()->image('logo.jpg'),
         ])->assertRedirect(route('register.booths'));
 
         $this->post(route('register.booths.store'), [
-            'booth_ids' => [$booth->id],
-            'tents' => [$booth->id => '1'],
+            'area_numbers' => [2],
             'grand_total' => 1,
         ])->assertRedirect(route('register.confirm'));
 
@@ -106,6 +104,29 @@ class RegistrationFlowTest extends HsnTestCase
         $this->assertNull($entry->agreed_price);
         $this->assertSame(SponsorshipStatus::NewRequest, $entry->status);
         $this->assertNull($entry->booth_id);
+    }
+
+    public function test_admin_can_cancel_a_registration_and_release_the_booth(): void
+    {
+        $booth = Booth::query()->where('type', 'umkm')->firstOrFail();
+        $registration = app(\App\Services\BookingService::class)->create(Event(), $this->applicant(), [
+            ['booth_id' => $booth->id, 'with_tent' => false],
+        ]);
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->from(route('admin.registrations.show', $registration))
+            ->post(route('admin.registrations.cancel', $registration), [
+                'note' => 'Pendaftar mengundurkan diri',
+                'refund' => '1',
+            ])
+            ->assertRedirect(route('admin.registrations.show', $registration))
+            ->assertSessionHas('status');
+
+        $registration->refresh();
+        $this->assertSame(RegistrationStatus::Cancelled, $registration->status);
+        $this->assertSame('Pendaftar mengundurkan diri', $registration->cancellation_note);
+        $this->assertNull($booth->fresh()->reservation);
     }
 
     public function test_payment_page_shows_qris_instead_of_bank_transfer(): void

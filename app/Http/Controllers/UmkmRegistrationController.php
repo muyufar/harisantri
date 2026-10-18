@@ -6,12 +6,10 @@ use App\Exceptions\BookingException;
 use App\Http\Requests\ConfirmRegistrationRequest;
 use App\Http\Requests\StoreApplicantRequest;
 use App\Http\Requests\StoreBoothSelectionRequest;
-use App\Models\Booth;
 use App\Models\Event;
 use App\Services\BookingService;
 use App\Services\BoothMapService;
 use App\Support\Phone;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class UmkmRegistrationController extends Controller
@@ -60,7 +58,7 @@ class UmkmRegistrationController extends Controller
 
         $active = $booking->activeSlotCount($event, $applicant['whatsapp']);
         $remaining = max(0, $event->config()->maxSlots() - $active);
-        $selected = collect(session('umkm_draft.items', []))->pluck('booth_id')->all();
+        $selected = collect(session('umkm_draft.items', []))->pluck('area')->filter()->map(fn ($n) => (int) $n)->values()->all();
 
         return view('registration.booths', [
             'event' => $event,
@@ -72,35 +70,37 @@ class UmkmRegistrationController extends Controller
         ]);
     }
 
-    public function storeBooths(StoreBoothSelectionRequest $request, BookingService $booking)
+    public function storeBooths(StoreBoothSelectionRequest $request, BookingService $booking, BoothMapService $maps)
     {
         $event = $this->event();
         $applicant = session('umkm_draft.applicant');
         abort_unless($applicant, 403);
 
-        $selections = $request->selections();
+        $areas = $request->areaNumbers();
         $remaining = max(0, $event->config()->maxSlots() - $booking->activeSlotCount($event, $applicant['whatsapp']));
 
-        if (count($selections) > $remaining) {
+        if (count($areas) > $remaining) {
             return back()->withErrors([
-                'booth_ids' => "Sisa kuota nomor WhatsApp ini {$remaining} slot.",
+                'area_numbers' => "Sisa kuota nomor WhatsApp ini {$remaining} slot.",
             ])->withInput();
         }
 
+        $selections = [];
+        $usedBoothIds = [];
+
         try {
+            foreach ($areas as $area) {
+                $booth = $maps->allocateBooth($event, $area, $usedBoothIds);
+                $usedBoothIds[] = $booth->id;
+                $selections[] = [
+                    'booth_id' => $booth->id,
+                    'area' => $area,
+                    'with_tent' => true,
+                ];
+            }
             $booking->quote($event, $selections);
         } catch (BookingException $exception) {
-            return back()->withErrors(['booth_ids' => $exception->getMessage()])->withInput();
-        }
-
-        foreach ($selections as $selection) {
-            $booth = Booth::query()
-                ->with(['reservation.registrationItem.registration', 'reservation.sponsorshipRequest'])
-                ->find($selection['booth_id']);
-
-            if (! $booth || $booth->event_id !== $event->id || $booth->type !== 'umkm' || $booth->displayStatus() !== 'available') {
-                return back()->withErrors(['booth_ids' => 'Salah satu lapak sudah tidak tersedia.'])->withInput();
-            }
+            return back()->withErrors(['area_numbers' => $exception->getMessage()])->withInput();
         }
 
         $draft = session('umkm_draft', []);
@@ -120,7 +120,7 @@ class UmkmRegistrationController extends Controller
         try {
             $quote = $booking->quote($event, $items);
         } catch (BookingException $exception) {
-            return redirect()->route('register.booths')->withErrors(['booth_ids' => $exception->getMessage()]);
+            return redirect()->route('register.booths')->withErrors(['area_numbers' => $exception->getMessage()]);
         }
 
         return view('registration.confirm', [
@@ -140,7 +140,7 @@ class UmkmRegistrationController extends Controller
         try {
             $registration = $booking->create($event, $applicant, $items);
         } catch (BookingException $exception) {
-            return redirect()->route('register.booths')->withErrors(['booth_ids' => $exception->getMessage()]);
+            return redirect()->route('register.booths')->withErrors(['area_numbers' => $exception->getMessage()]);
         }
 
         session()->forget('umkm_draft');

@@ -44,9 +44,7 @@
                     <article class="rounded-3xl border border-slate-200 bg-white p-6">
                         <h3 class="text-xl font-bold">{{ $price->sizeLabel() }}</h3>
                         <dl class="mt-4 space-y-2 text-sm">
-                            <div class="flex justify-between"><dt>Tempat saja</dt><dd class="font-semibold">{{ rupiah($price->place_price) }}</dd></div>
-                            <div class="flex justify-between"><dt>Tambahan tenda</dt><dd class="font-semibold">{{ rupiah($price->tent_price) }}</dd></div>
-                            <div class="flex justify-between border-t border-slate-100 pt-2"><dt>Total dengan tenda</dt><dd class="font-semibold text-nu">{{ rupiah($price->place_price + $price->tent_price) }}</dd></div>
+                            <div class="flex justify-between"><dt>Paket tenda (tempat + tenda)</dt><dd class="font-semibold text-nu">{{ rupiah($price->place_price + $price->tent_price) }}</dd></div>
                         </dl>
                     </article>
                 @empty
@@ -56,7 +54,7 @@
             <div class="mt-6 grid gap-4 md:grid-cols-2">
                 <article class="rounded-3xl bg-white p-6">
                     <h3 class="font-bold">Lapak UMKM</h3>
-                    <p class="mt-2 text-sm text-slate-600">Lihat denah sebagai gambaran letak, lalu pilih lapak yang masih tersedia dari daftar. Tentukan perlu tenda atau tidak. Maksimal {{ $config->maxSlots() }} slot untuk satu nomor WhatsApp.</p>
+                    <p class="mt-2 text-sm text-slate-600">Klik nomor area tenda 1–8 pada denah. Panitia yang menempatkan posisi tepat di dalam kotak. Maksimal {{ $config->maxSlots() }} slot untuk satu nomor WhatsApp.</p>
                 </article>
                 <article class="rounded-3xl bg-gold-soft p-6">
                     <h3 class="font-bold">Lapak sponsorship</h3>
@@ -86,7 +84,7 @@
             <ol class="mt-4 grid gap-3 md:grid-cols-3">
                 @foreach ([
                     'Isi data penanggung jawab dan usaha. Akun sandi tidak diperlukan.',
-                    'Pilih lapak yang masih tersedia dari daftar. Tenda bersifat pilihan pada tiap slot.',
+                    'Pilih nomor area tenda 1–8 pada denah. Panitia yang mengatur sisi/posisi di dalam kotak.',
                     'Periksa ringkasan harga yang dihitung server, lalu setujui ketentuan.',
                     'Bayar lewat QRIS sebesar nominal yang tertera, lalu unggah bukti pembayaran.',
                     'Panitia menerima atau menolak pembayaran. Jika ditolak, bukti dapat diunggah ulang.',

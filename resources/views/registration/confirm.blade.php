@@ -15,9 +15,9 @@
         <div class="mt-4 space-y-3">
             @foreach ($quote['lines'] as $line)
                 <article class="rounded-2xl bg-white p-4 text-sm">
-                    <p class="font-semibold">{{ $line['code'] }} · {{ $line['zone'] }} · {{ $line['size'] }}</p>
-                    <p>Tempat {{ rupiah($line['place_price']) }}</p>
-                    <p>Tenda {{ $line['with_tent'] ? rupiah($line['tent_price']) : 'tidak diambil' }}</p>
+                    <p class="font-semibold">{{ $line['code'] }} · {{ $line['size'] }}</p>
+                    <p class="text-slate-600">Posisi tepat di dalam kotak ditentukan panitia.</p>
+                    <p>Paket tenda {{ rupiah($line['line_total']) }}</p>
                     <p class="font-semibold">Subtotal {{ rupiah($line['line_total']) }}</p>
                 </article>
             @endforeach

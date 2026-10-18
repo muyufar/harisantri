@@ -20,7 +20,7 @@
                     <tr class="border-t border-slate-100">
                         <td class="p-3"><a class="font-semibold text-nu" href="{{ route('admin.registrations.show', $registration) }}">{{ $registration->code }}</a></td>
                         <td>{{ $registration->applicant->business_name }}</td>
-                        <td>{{ $registration->items->pluck('booth_code')->join(', ') }}</td>
+                        <td>{{ $registration->items->pluck('zone_name')->unique()->join(', ') }}</td>
                         <td>{{ rupiah($registration->grand_total) }}</td>
                         <td>{{ $registration->status->label() }}</td>
                     </tr>

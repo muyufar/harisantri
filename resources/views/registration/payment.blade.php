@@ -12,8 +12,9 @@
         <div class="mt-6 space-y-3">
             @foreach ($registration->items as $item)
                 <article class="rounded-2xl bg-white p-4 text-sm">
-                    <p class="font-semibold">{{ $item->booth_code }} · {{ $item->zone_name }} · {{ $item->sizeLabel() }}</p>
-                    <p>Tempat {{ rupiah($item->place_price) }} · tenda {{ rupiah($item->tent_price) }}</p>
+                    <p class="font-semibold">{{ $item->zone_name }} · {{ $item->sizeLabel() }}</p>
+                    <p class="text-slate-600">Posisi di dalam kotak diatur panitia · slot {{ $item->booth_code }}</p>
+                    <p>Paket {{ rupiah($item->line_total) }}</p>
                 </article>
             @endforeach
         </div>

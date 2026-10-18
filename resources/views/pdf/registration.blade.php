@@ -11,7 +11,8 @@
     </style>
 </head>
 <body>
-    <img src="{{ public_path('images/logo-nu.png') }}" alt="Logo Nahdlatul Ulama" style="height: 52px;">
+    <img src="{{ public_path('images/logo-nu.png') }}" alt="Logo Nahdlatul Ulama" style="height: 48px;">
+    <img src="{{ public_path('images/logo-hari-santri.png') }}" alt="Logo Hari Santri 2026" style="height: 48px; margin-left: 12px;">
     <h1>{{ $type === 'konfirmasi' ? 'Bukti Konfirmasi Lapak' : 'Bukti Pengajuan Lapak' }}</h1>
     <p>{{ $registration->event->name }}</p>
     <p class="muted">{{ $registration->event->activity_name }} · {{ $registration->event->venue }} · {{ $registration->event->starts_at->timezone('Asia/Jakarta')->translatedFormat('l, j F Y') }}</p>
@@ -22,13 +23,12 @@
     <p>{{ $registration->applicant->business_name }} — {{ $registration->applicant->full_name }}</p>
     <p>NIK {{ $registration->applicant->nik }}</p>
     <table>
-        <tr><th>Lapak</th><th>Zona</th><th>Ukuran</th><th>Tenda</th><th>Nominal</th></tr>
+        <tr><th>Area</th><th>Slot panitia</th><th>Ukuran</th><th>Nominal</th></tr>
         @foreach ($registration->items as $item)
             <tr>
-                <td>{{ $item->booth_code }}</td>
                 <td>{{ $item->zone_name }}</td>
+                <td>{{ $item->booth_code }}</td>
                 <td>{{ $item->sizeLabel() }}</td>
-                <td>{{ $item->with_tent ? 'Ya' : 'Tidak' }}</td>
                 <td>{{ rupiah($item->line_total) }}</td>
             </tr>
         @endforeach

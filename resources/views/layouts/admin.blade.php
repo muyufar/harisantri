@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') — Panitia HSN 2026</title>
-    <link rel="icon" href="{{ asset('images/logo-nu.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon-hari-santri.png') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -30,7 +30,10 @@
     <div class="min-h-screen md:grid md:grid-cols-[240px_1fr]">
         <aside class="border-b border-white/10 bg-nu-dark text-white md:min-h-screen md:border-b-0">
             <div class="px-4 py-4">
-                <img src="{{ asset('images/logo-nu.png') }}" alt="Logo Nahdlatul Ulama" class="h-14 w-auto max-w-full">
+                <div class="inline-flex max-w-full items-center gap-2 rounded-xl bg-white px-2 py-1.5">
+                    <img src="{{ asset('images/logo-nu.png') }}" alt="Logo Nahdlatul Ulama" class="h-10 w-auto max-w-[45%]">
+                    <img src="{{ asset('images/logo-hari-santri.png') }}" alt="Logo Hari Santri 2026" class="h-10 w-auto max-w-[55%]">
+                </div>
                 <p class="mt-2 text-sm font-semibold">Panitia HSN 2026</p>
                 <p class="text-xs text-white/70">{{ auth()->user()->name }}</p>
             </div>

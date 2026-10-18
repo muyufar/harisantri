@@ -1,6 +1,7 @@
 export function registerBoothMap(Alpine) {
     Alpine.data('boothMap', (config) => ({
         booths: config.booths || [],
+        areas: config.areas || [],
         mode: config.mode || 'view',
         max: Number(config.max || 3),
         floorplan: config.floorplan,
@@ -8,7 +9,7 @@ export function registerBoothMap(Alpine) {
         zones: config.zones || [],
         saveUrl: config.saveUrl,
         feedUrl: config.feedUrl,
-        selected: [],
+        selected: Array.isArray(config.selected) ? config.selected.map(Number) : [],
         active: null,
         notice: '',
         scale: 1,
@@ -25,7 +26,6 @@ export function registerBoothMap(Alpine) {
         filterStatus: 'all',
         query: '',
         init() {
-            this.syncFromForm();
             if (this.mode !== 'edit' && this.feedUrl) {
                 this.timer = setInterval(() => this.refresh(), 20000);
             }
@@ -41,60 +41,52 @@ export function registerBoothMap(Alpine) {
                 return true;
             });
         },
-        syncFromForm() {
-            this.selected = Array.from(document.querySelectorAll('input[name="booth_ids[]"]:checked')).map((input) => Number(input.value));
+        isSelected(number) {
+            return this.selected.includes(Number(number));
         },
-        isSelected(id) {
-            return this.selected.includes(Number(id));
+        areaOf(number) {
+            return this.areas.find((area) => Number(area.number) === Number(number));
         },
         boothOf(id) {
             return this.booths.find((booth) => Number(booth.id) === Number(id));
         },
-        rowVisible(id) {
-            const booth = this.boothOf(id);
-            if (!booth) return false;
-            const query = this.query.trim().toLowerCase();
-            if (query && !`${booth.code} ${booth.zone || ''}`.toLowerCase().includes(query)) return false;
-            if (this.filterSize !== 'all' && booth.size !== this.filterSize) return false;
-            if (this.filterZone !== 'all' && String(booth.zone_id) !== String(this.filterZone)) return false;
-            if (this.filterStatus !== 'all' && booth.status !== this.filterStatus) return false;
-            return true;
-        },
-        zoneHasVisible(zoneId) {
-            return this.booths.some((booth) => String(booth.zone_id) === String(zoneId) && this.rowVisible(booth.id));
-        },
-        get anyListed() {
-            return this.booths.some((booth) => (this.mode !== 'select' || booth.type === 'umkm') && this.rowVisible(booth.id));
-        },
-        get zoneSummary() {
-            return (this.zones || []).map((zone) => {
-                const rows = this.booths.filter((booth) => String(booth.zone_id) === String(zone.id));
-                return {
-                    id: zone.id,
-                    name: zone.name,
-                    total: rows.length,
-                    available: rows.filter((booth) => booth.status === 'available').length,
-                    held: rows.filter((booth) => booth.status === 'held').length,
-                    occupied: rows.filter((booth) => booth.status === 'occupied').length,
-                    blocked: rows.filter((booth) => booth.status === 'blocked').length,
-                };
-            }).filter((zone) => zone.total > 0);
+        areaButtonClass(area) {
+            const selected = this.isSelected(area.number);
+            if (selected) return 'border-nu ring-2 ring-white shadow-lg';
+            if (area.status === 'occupied' || area.available < 1) return 'border-white/40 opacity-70';
+            return 'border-white/80 hover:ring-2 hover:ring-white/80';
         },
         statusClass(status) {
-            if (status === 'occupied') return 'bg-red-600 text-white';
-            if (status === 'held') return 'bg-amber-400 text-slate-900';
-            if (status === 'blocked') return 'bg-slate-500 text-white';
-            return 'bg-nu text-white';
+            if (status === 'occupied') return 'text-red-700';
+            if (status === 'held') return 'text-amber-700';
+            if (status === 'blocked') return 'text-slate-600';
+            return 'text-nu';
         },
-        onListChange(event) {
-            const checked = document.querySelectorAll('input[name="booth_ids[]"]:checked').length;
-            if (event.target.checked && checked > this.max) {
-                event.target.checked = false;
-                this.notice = `Kuota pilihan pada pendaftaran ini ${this.max} lapak.`;
-            } else {
-                this.notice = '';
+        toggleArea(area) {
+            if (this.mode === 'view') {
+                this.active = area;
+                return;
             }
-            this.syncFromForm();
+            if (this.mode !== 'select') {
+                this.active = area;
+                return;
+            }
+            const number = Number(area.number);
+            if (this.isSelected(number)) {
+                this.selected = this.selected.filter((value) => value !== number);
+                this.notice = '';
+                return;
+            }
+            if (area.available < 1) {
+                this.notice = `Kotak ${number} sudah penuh.`;
+                return;
+            }
+            if (this.selected.length >= this.max) {
+                this.notice = `Kuota pilihan pada pendaftaran ini ${this.max} nomor.`;
+                return;
+            }
+            this.selected.push(number);
+            this.notice = `Kotak ${number} dipilih.`;
         },
         color(booth) {
             if (booth.status === 'blocked') return 'border border-slate-700 bg-slate-500/70';
@@ -165,15 +157,21 @@ export function registerBoothMap(Alpine) {
                 const response = await fetch(this.feedUrl, { headers: { Accept: 'application/json' } });
                 if (!response.ok) return;
                 const data = await response.json();
-                this.booths = data.booths;
-                data.booths.forEach((booth) => {
-                    const input = document.getElementById(`booth-check-${booth.id}`);
-                    if (input?.checked && booth.status !== 'available') {
-                        input.checked = false;
-                        this.notice = `${booth.code} baru saja dipesan. Pilih slot lain.`;
-                    }
-                });
-                this.syncFromForm();
+                this.booths = data.booths || this.booths;
+                if (data.areas) {
+                    this.areas = data.areas;
+                    this.selected = this.selected.filter((number) => {
+                        const area = this.areaOf(number);
+                        return area && (area.available > 0 || this.isSelected(number));
+                    });
+                    this.selected.forEach((number) => {
+                        const area = this.areaOf(number);
+                        if (area && area.available < 1) {
+                            this.selected = this.selected.filter((value) => value !== number);
+                            this.notice = `Kotak ${number} baru saja penuh. Pilih nomor lain.`;
+                        }
+                    });
+                }
             } catch (error) {
                 // Peta tetap menampilkan data terakhir bila jaringan terganggu.
             }

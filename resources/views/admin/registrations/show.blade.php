@@ -23,7 +23,7 @@
         </article>
         <article class="rounded-2xl bg-white p-4 text-sm">
             @foreach ($registration->items as $item)
-                <p class="mb-2">{{ $item->booth_code }} · {{ $item->zone_name }} · {{ $item->sizeLabel() }} · tenda {{ $item->with_tent ? 'ya' : 'tidak' }} · {{ rupiah($item->line_total) }}</p>
+                <p class="mb-2">{{ $item->zone_name }} · slot {{ $item->booth_code }} · {{ $item->sizeLabel() }} · {{ rupiah($item->line_total) }}</p>
             @endforeach
             <p>Pembayaran: {{ $registration->payment?->status->label() }}</p>
             @if ($registration->payment?->proof_path)

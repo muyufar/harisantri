@@ -4,13 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Masuk panitia</title>
-    <link rel="icon" href="{{ asset('images/logo-nu.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/favicon-hari-santri.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="grid min-h-screen place-items-center bg-canvas px-4">
     <form method="POST" action="{{ route('admin.login') }}" class="w-full max-w-md rounded-3xl bg-white p-6 shadow-sm">
         @csrf
-        <img src="{{ asset('images/logo-nu.png') }}" alt="Logo Nahdlatul Ulama, PCNU Kabupaten Magelang" class="mx-auto h-20 w-auto">
+        <div class="flex items-center justify-center gap-4">
+            <img src="{{ asset('images/logo-nu.png') }}" alt="Logo Nahdlatul Ulama, PCNU Kabupaten Magelang" class="h-16 w-auto">
+            <img src="{{ asset('images/logo-hari-santri.png') }}" alt="Logo Hari Santri 2026" class="h-16 w-auto">
+        </div>
         <h1 class="mt-4 text-2xl font-bold">Masuk panitia</h1>
         <p class="mt-1 text-sm text-slate-600">HSN 2026 — PCNU Kabupaten Magelang</p>
         @error('email')<p class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{{ $message }}</p>@enderror

@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Exceptions\BookingException;
 use App\Models\Booth;
+use App\Models\BoothZone;
 use App\Models\Event;
+use App\Support\TentLayout;
 use Illuminate\Support\Collection;
 
 class BoothMapService
@@ -16,6 +18,7 @@ class BoothMapService
         return Booth::query()
             ->with(['zone', 'reservation.registrationItem.registration', 'reservation.sponsorshipRequest'])
             ->where('event_id', $event->id)
+            ->whereHas('zone', fn ($query) => $query->where('is_active', true))
             ->orderBy('code')
             ->get();
     }
@@ -29,7 +32,7 @@ class BoothMapService
 
             if ($booth->type === 'umkm') {
                 try {
-                    $price = $this->pricing->forBooth($booth, false);
+                    $price = $this->pricing->forBooth($booth, true);
                     $place = $price['place_price'];
                     $tent = $price['tent_fee'];
                 } catch (BookingException) {
@@ -38,9 +41,13 @@ class BoothMapService
                 }
             }
 
+            $areaNumber = is_numeric($booth->zone?->code) ? (int) $booth->zone->code : null;
+
             return [
                 'id' => $booth->id,
                 'code' => $booth->code,
+                'label' => $areaNumber ? 'Kotak '.$areaNumber : $booth->code,
+                'area' => $areaNumber,
                 'zone' => $booth->zone?->name,
                 'zone_id' => $booth->zone_id,
                 'type' => $booth->type,
@@ -54,12 +61,69 @@ class BoothMapService
                 'status_label' => $booth->statusLabel(),
                 'place_price' => $place,
                 'tent_price' => $tent,
+                'line_total' => $place !== null && $tent !== null ? $place + $tent : null,
             ];
         })->values();
     }
 
-    /** @param  array<int, int>  $selected */
-    public function payload(Event $event, string $mode, array $selected = [], ?int $remaining = null): array
+    /** @return array<int, array<string, mixed>> */
+    public function areaCards(Event $event): array
+    {
+        $booths = $this->present($event)->where('type', 'umkm');
+        $cards = [];
+
+        foreach (TentLayout::areas() as $number => $area) {
+            $rows = $booths->where('area', $number);
+            $available = $rows->where('status', 'available')->count();
+            $status = $available > 0 ? 'available' : (
+                $rows->where('status', 'held')->isNotEmpty() ? 'held' : (
+                    $rows->where('status', 'occupied')->isNotEmpty() ? 'occupied' : 'blocked'
+                )
+            );
+
+            $sample = $rows->first();
+            $cards[] = [
+                'number' => $number,
+                'name' => $area['name'],
+                'group' => $area['group'],
+                'size' => $area['size'],
+                'size_label' => match ($area['size']) {
+                    '2x2' => '2 × 2 meter',
+                    '3x3' => '3 × 3 meter',
+                    default => $area['size'],
+                },
+                'color' => $area['color'],
+                'x' => $area['x'],
+                'y' => $area['y'],
+                'w' => $area['w'],
+                'h' => $area['h'],
+                'total' => $rows->count(),
+                'available' => $available,
+                'held' => $rows->where('status', 'held')->count(),
+                'occupied' => $rows->where('status', 'occupied')->count(),
+                'blocked' => $rows->where('status', 'blocked')->count(),
+                'status' => $status,
+                'status_label' => match ($status) {
+                    'available' => $available.' slot tersedia',
+                    'held' => 'Sedang dipesan',
+                    'occupied' => 'Penuh',
+                    default => 'Tidak tersedia',
+                },
+                'place_price' => $sample['place_price'] ?? null,
+                'tent_price' => $sample['tent_price'] ?? null,
+                'line_total' => $sample['line_total'] ?? null,
+                'zone_id' => $rows->first()['zone_id'] ?? BoothZone::query()
+                    ->where('event_id', $event->id)
+                    ->where('code', (string) $number)
+                    ->value('id'),
+            ];
+        }
+
+        return $cards;
+    }
+
+    /** @param  array<int, int>  $selectedAreas */
+    public function payload(Event $event, string $mode, array $selectedAreas = [], ?int $remaining = null): array
     {
         $booths = $this->present($event);
 
@@ -68,8 +132,9 @@ class BoothMapService
             'floorplan' => $event->config()->floorplanUrl(),
             'max' => $remaining ?? $event->config()->maxSlots(),
             'booths' => $booths,
-            'zones' => $event->zones()->orderBy('sort_order')->get(['id', 'name', 'type']),
-            'selected' => array_values($selected),
+            'areas' => $this->areaCards($event),
+            'zones' => $event->zones()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name', 'type', 'code']),
+            'selected' => array_values(array_map('intval', $selectedAreas)),
             'saveUrl' => $mode === 'edit' ? route('admin.map.update') : null,
             'feedUrl' => route('booths.feed'),
             'landmarks' => $this->landmarks(),
@@ -93,15 +158,45 @@ class BoothMapService
         ];
     }
 
+    /**
+     * Ambil satu booth kosong di area nomor tersebut.
+     *
+     * @param  array<int, int>  $excludeBoothIds
+     */
+    public function allocateBooth(Event $event, int $areaNumber, array $excludeBoothIds = []): Booth
+    {
+        if (! TentLayout::area($areaNumber)) {
+            throw new BookingException('Nomor area tenda tidak valid.');
+        }
+
+        $booths = Booth::query()
+            ->with(['zone', 'reservation.registrationItem.registration', 'reservation.sponsorshipRequest'])
+            ->where('event_id', $event->id)
+            ->where('type', 'umkm')
+            ->whereHas('zone', fn ($query) => $query->where('code', (string) $areaNumber)->where('is_active', true))
+            ->when($excludeBoothIds !== [], fn ($query) => $query->whereNotIn('id', $excludeBoothIds))
+            ->orderBy('code')
+            ->get();
+
+        foreach ($booths as $booth) {
+            if ($booth->state === 'available' && $booth->displayStatus() === 'available') {
+                return $booth;
+            }
+        }
+
+        throw new BookingException('Kotak '.$areaNumber.' sudah penuh. Pilih nomor area lain.');
+    }
+
     /** @return array<int, array<string, string|float>> */
     private function landmarks(): array
     {
         return [
-            ['kind' => 'start', 'label' => 'Start', 'short' => 'Start', 'note' => 'Titik mulai Jalan Sehat, di tepi jalan sisi timur.', 'x' => 88, 'y' => 31, 'w' => 6, 'h' => 6],
-            ['kind' => 'finish', 'label' => 'Finis', 'short' => 'Finis', 'note' => 'Titik finis Jalan Sehat, di sisi barat dekat gerbang.', 'x' => 6, 'y' => 40, 'w' => 8, 'h' => 6],
-            ['kind' => 'panggung', 'label' => 'Panggung', 'short' => 'Panggung', 'note' => 'Panggung kegiatan, bukan lapak sewa.', 'x' => 23.5, 'y' => 50, 'w' => 6, 'h' => 7],
-            ['kind' => 'vip', 'label' => 'Tenda VIP', 'short' => 'VIP', 'note' => 'Tenda VIP, bukan lapak sewa.', 'x' => 26, 'y' => 66, 'w' => 7, 'h' => 7],
-            ['kind' => 'panitia', 'label' => 'Tenda Panitia', 'short' => 'Panitia', 'note' => 'Pos panitia, bukan lapak sewa.', 'x' => 21, 'y' => 76, 'w' => 6, 'h' => 6],
+            ['kind' => 'start', 'label' => 'Start', 'short' => 'Start', 'note' => 'Titik mulai Jalan Sehat.', 'x' => 88, 'y' => 28, 'w' => 6, 'h' => 6],
+            ['kind' => 'finish', 'label' => 'Finis', 'short' => 'Finis', 'note' => 'Titik finis Jalan Sehat.', 'x' => 4, 'y' => 36, 'w' => 7, 'h' => 6],
+            ['kind' => 'panggung', 'label' => 'Panggung', 'short' => 'Panggung', 'note' => 'Panggung kegiatan, bukan lapak sewa.', 'x' => 18, 'y' => 48, 'w' => 7, 'h' => 7],
+            ['kind' => 'vip', 'label' => 'Tenda VIP', 'short' => 'VIP', 'note' => 'Tenda VIP, bukan lapak sewa.', 'x' => 24, 'y' => 58, 'w' => 7, 'h' => 7],
+            ['kind' => 'panitia', 'label' => 'Tenda Panitia', 'short' => 'Panitia', 'note' => 'Pos panitia, bukan lapak sewa.', 'x' => 14, 'y' => 66, 'w' => 7, 'h' => 6],
+            ['kind' => 'sponsor', 'label' => 'Tenda Sponsor', 'short' => 'Sponsor', 'note' => 'Area sponsorship, diajukan lewat formulir sponsor.', 'x' => 58, 'y' => 52, 'w' => 12, 'h' => 10],
         ];
     }
 }
