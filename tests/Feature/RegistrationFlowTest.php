@@ -45,7 +45,16 @@ class RegistrationFlowTest extends HsnTestCase
             'proof' => UploadedFile::fake()->image('bukti.jpg'),
         ])->assertRedirect();
 
-        $this->assertSame(RegistrationStatus::AwaitingVerification, $registration->fresh()->status);
+        $registration->refresh();
+        $this->assertSame(RegistrationStatus::AwaitingVerification, $registration->status);
+        $this->assertNotNull($registration->payment->submitted_at);
+
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.index'))
+            ->assertOk()
+            ->assertSee('Bukti diunggah', false)
+            ->assertSee($registration->payment->submitted_at->timezone('Asia/Jakarta')->format('d/m/Y H.i'), false);
 
         $this->get(URL::signedRoute('register.pdf', [$registration, 'konfirmasi']))->assertForbidden();
 

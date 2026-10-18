@@ -22,7 +22,7 @@
     </form>
     <div class="mt-4 overflow-x-auto rounded-2xl bg-white">
         <table class="min-w-full text-left text-sm">
-            <thead class="text-slate-500"><tr><th class="p-3">Kode</th><th>Usaha</th><th>Lapak</th><th>Total</th><th>Status</th></tr></thead>
+            <thead class="text-slate-500"><tr><th class="p-3">Kode</th><th>Usaha</th><th>Lapak</th><th>Total</th><th>Status</th><th>Bukti diunggah</th></tr></thead>
             <tbody>
                 @forelse ($registrations as $registration)
                     <tr class="border-t border-slate-100">
@@ -31,9 +31,10 @@
                         <td>{{ $registration->items->pluck('zone_name')->unique()->join(', ') }}</td>
                         <td>{{ rupiah($registration->grand_total) }}</td>
                         <td>{{ $registration->status->label() }}</td>
+                        <td class="whitespace-nowrap">{{ $registration->payment?->submitted_at?->timezone('Asia/Jakarta')->format('d/m/Y H.i') ?? '—' }}</td>
                     </tr>
                 @empty
-                    <tr><td class="p-4 text-slate-500" colspan="5">Belum ada pendaftar.</td></tr>
+                    <tr><td class="p-4 text-slate-500" colspan="6">Belum ada pendaftar.</td></tr>
                 @endforelse
             </tbody>
         </table>

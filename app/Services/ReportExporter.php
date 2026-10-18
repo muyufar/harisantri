@@ -52,10 +52,10 @@ class ReportExporter
 
     private function registrantRows(Event $event): array
     {
-        $rows = [['Kode', 'Usaha', 'Penanggung jawab', 'NIK', 'WhatsApp', 'Lapak', 'Tenda', 'Total', 'Status', 'Dibuat']];
+        $rows = [['Kode', 'Usaha', 'Penanggung jawab', 'NIK', 'WhatsApp', 'Lapak', 'Tenda', 'Total', 'Status', 'Dibuat', 'Bukti diunggah']];
 
         Registration::query()
-            ->with(['applicant', 'items'])
+            ->with(['applicant', 'items', 'payment'])
             ->where('event_id', $event->id)
             ->orderByDesc('id')
             ->each(function (Registration $registration) use (&$rows) {
@@ -70,6 +70,7 @@ class ReportExporter
                     $registration->grand_total,
                     $registration->status->label(),
                     $registration->created_at?->timezone('Asia/Jakarta')->format('Y-m-d H:i'),
+                    $registration->payment?->submitted_at?->timezone('Asia/Jakarta')->format('Y-m-d H:i') ?? '-',
                 ];
             });
 
@@ -78,7 +79,7 @@ class ReportExporter
 
     private function financeRows(Event $event): array
     {
-        $rows = [['Kode', 'Usaha', 'Nominal', 'Status bayar', 'Status daftar', 'Diverifikasi']];
+        $rows = [['Kode', 'Usaha', 'Nominal', 'Status bayar', 'Status daftar', 'Bukti diunggah', 'Diverifikasi']];
 
         Registration::query()
             ->with(['applicant', 'payment'])
@@ -91,6 +92,7 @@ class ReportExporter
                     $registration->payment?->amount ?? $registration->grand_total,
                     $registration->payment?->status->label() ?? '-',
                     $registration->status->label(),
+                    $registration->payment?->submitted_at?->timezone('Asia/Jakarta')->format('Y-m-d H:i') ?? '-',
                     $registration->payment?->verified_at?->timezone('Asia/Jakarta')->format('Y-m-d H:i') ?? '-',
                 ];
             });

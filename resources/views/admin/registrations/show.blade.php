@@ -26,6 +26,9 @@
                 <p class="mb-2">{{ $item->zone_name }} · slot {{ $item->booth_code }} · {{ $item->sizeLabel() }} · {{ $item->with_tent ? 'pakai tenda' : 'tanpa tenda' }} · {{ rupiah($item->line_total) }}</p>
             @endforeach
             <p>Pembayaran: {{ $registration->payment?->status->label() }}</p>
+            @if ($registration->payment?->submitted_at)
+                <p>Bukti diunggah: {{ $registration->payment->submitted_at->timezone('Asia/Jakarta')->format('d/m/Y H.i') }} WIB</p>
+            @endif
             @if ($registration->payment?->proof_path)
                 @php($proofUrl = route('admin.registrations.proof', $registration))
                 <a class="mt-2 inline-flex rounded-xl bg-nu px-4 py-2 font-semibold text-white" href="{{ $proofUrl }}" target="_blank">Lihat bukti bayar</a>
