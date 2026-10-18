@@ -65,15 +65,15 @@
                     <template x-for="area in areas" :key="area.number">
                         <button
                             type="button"
-                            class="absolute z-20 rounded-md border-2 transition"
+                            class="absolute z-30 cursor-pointer rounded-md border-2 border-white shadow-md transition"
                             :class="areaButtonClass(area)"
-                            :style="`left:${area.x}%;top:${area.y}%;width:${area.w}%;height:${area.h}%;background:${area.color}33`"
+                            :style="`left:${area.x}%;top:${area.y}%;width:${area.w}%;height:${area.h}%;background:${area.color}99`"
                             @click.stop="toggleArea(area)"
                             :aria-label="`Kotak ${area.number}`"
                             :title="`Kotak ${area.number}`"
                             :disabled="mode === 'select' && area.available < 1 && !isSelected(area.number)"
                         >
-                            <span class="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold text-white shadow" :style="`background:${area.color}`" x-text="area.number"></span>
+                            <span class="absolute -left-1 -top-3 flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white ring-2 ring-white shadow-md" :style="`background:${area.color}`" x-text="area.number"></span>
                         </button>
                     </template>
 

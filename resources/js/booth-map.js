@@ -52,9 +52,9 @@ export function registerBoothMap(Alpine) {
         },
         areaButtonClass(area) {
             const selected = this.isSelected(area.number);
-            if (selected) return 'border-nu ring-2 ring-white shadow-lg';
-            if (area.status === 'occupied' || area.available < 1) return 'border-white/40 opacity-70';
-            return 'border-white/80 hover:ring-2 hover:ring-white/80';
+            if (selected) return 'ring-4 ring-nu';
+            if (area.status === 'occupied' || area.available < 1) return 'opacity-80';
+            return 'hover:ring-2 hover:ring-white';
         },
         statusClass(status) {
             if (status === 'occupied') return 'text-red-700';
