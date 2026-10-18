@@ -54,6 +54,7 @@ class StoreApplicantRequest extends FormRequest
             'whatsapp.regex' => 'Masukkan nomor WhatsApp Indonesia yang aktif.',
             'nik.digits' => 'NIK harus 16 digit angka.',
             'product_description.min' => 'Jelaskan produk yang dijual minimal 10 karakter.',
+            'logo.max' => 'Foto maksimal 2 MB. Pilih gambar yang lebih kecil.',
         ];
     }
 }

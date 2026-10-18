@@ -11,6 +11,9 @@ use Illuminate\Support\Collection;
 
 class BoothMapService
 {
+    /** @var array<int, Collection<int, array<string, mixed>>> */
+    private array $presented = [];
+
     public function __construct(private PricingService $pricing) {}
 
     public function models(Event $event): Collection
@@ -26,7 +29,11 @@ class BoothMapService
     /** @return Collection<int, array<string, mixed>> */
     public function present(Event $event): Collection
     {
-        return $this->models($event)->map(function (Booth $booth) {
+        if (isset($this->presented[$event->id])) {
+            return $this->presented[$event->id];
+        }
+
+        return $this->presented[$event->id] = $this->models($event)->map(function (Booth $booth) {
             $place = null;
             $tent = null;
 
@@ -69,7 +76,15 @@ class BoothMapService
     /** @return array<int, array<string, mixed>> */
     public function areaCards(Event $event): array
     {
-        $booths = $this->present($event)->where('type', 'umkm');
+        return $this->cardsFrom($event, $this->present($event));
+    }
+
+    /** @param  Collection<int, array<string, mixed>>  $presented
+     * @return array<int, array<string, mixed>>
+     */
+    private function cardsFrom(Event $event, Collection $presented): array
+    {
+        $booths = $presented->where('type', 'umkm');
         $cards = [];
 
         foreach (TentLayout::areas() as $number => $area) {
@@ -132,8 +147,8 @@ class BoothMapService
             'mode' => $mode,
             'floorplan' => $event->config()->floorplanUrl(),
             'max' => $remaining ?? $event->config()->maxSlots(),
-            'booths' => $booths,
-            'areas' => $this->areaCards($event),
+            'booths' => $mode === 'edit' ? $booths : [],
+            'areas' => $this->cardsFrom($event, $booths),
             'zones' => $event->zones()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name', 'type', 'code']),
             'selected' => array_values(array_map('intval', $selectedAreas)),
             'tentChoices' => $tentChoices,

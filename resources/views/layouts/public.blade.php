@@ -66,5 +66,71 @@
             </div>
         </div>
     </footer>
+    <script>
+        window.shrinkImageFile = function (file) {
+            if (!file || !file.type || file.type.indexOf('image/') !== 0 || file.size < 400 * 1024) {
+                return Promise.resolve(file);
+            }
+
+            return new Promise((resolve) => {
+                const image = new Image();
+                const url = URL.createObjectURL(file);
+                image.onload = () => {
+                    const max = 1280;
+                    const scale = Math.min(1, max / Math.max(image.width, image.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(image.width * scale));
+                    canvas.height = Math.max(1, Math.round(image.height * scale));
+                    canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+                    URL.revokeObjectURL(url);
+                    canvas.toBlob((blob) => {
+                        if (!blob || blob.size >= file.size) {
+                            resolve(file);
+                            return;
+                        }
+                        resolve(new File([blob], 'foto.jpg', { type: 'image/jpeg', lastModified: Date.now() }));
+                    }, 'image/jpeg', 0.82);
+                };
+                image.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    resolve(file);
+                };
+                image.src = url;
+            });
+        };
+
+        window.submitWithShrink = async function (event, el, maxMb) {
+            const state = window.Alpine.$data(el);
+            if (state.sending) return;
+            const form = event.target;
+            if (!form.reportValidity()) return;
+
+            const note = form.querySelector('[data-upload-note]');
+            if (note) note.textContent = '';
+            state.sending = true;
+
+            const input = form.querySelector('input[type="file"]');
+            const file = input && input.files ? input.files[0] : null;
+            if (file && window.shrinkImageFile) {
+                try {
+                    const smaller = await window.shrinkImageFile(file);
+                    if (smaller && smaller !== file && typeof DataTransfer !== 'undefined') {
+                        const transfer = new DataTransfer();
+                        transfer.items.add(smaller);
+                        input.files = transfer.files;
+                    }
+                } catch (error) {}
+            }
+
+            const ready = input && input.files ? input.files[0] : null;
+            if (ready && ready.size > maxMb * 1024 * 1024) {
+                state.sending = false;
+                if (note) note.textContent = 'Berkas masih lebih dari ' + maxMb + ' MB. Pilih gambar yang lebih kecil.';
+                return;
+            }
+
+            form.submit();
+        };
+    </script>
 </body>
 </html>

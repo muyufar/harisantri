@@ -49,7 +49,7 @@
         @endif
 
         @if ($registration->canUploadProof())
-            <form method="POST" action="{{ URL::temporarySignedRoute('register.proof', now()->addDays(7), $registration) }}" enctype="multipart/form-data" class="mt-4 space-y-3" x-data="formState" @submit="sending = true">
+            <form method="POST" action="{{ URL::temporarySignedRoute('register.proof', now()->addDays(7), $registration) }}" enctype="multipart/form-data" class="mt-4 space-y-3" x-data="formState" @submit.prevent="submitWithShrink($event, $el, 4)">
                 @csrf
                 <label class="block text-sm" x-data="{ name: '' }">
                     <span class="mb-1 block font-medium">Bukti pembayaran JPG, PNG, atau PDF</span>
@@ -57,9 +57,12 @@
                         <span x-text="name || 'Pilih file bukti pembayaran'"></span>
                         <input class="absolute inset-0 w-full cursor-pointer" style="opacity:0" type="file" name="proof" accept="image/jpeg,image/png,application/pdf" required @change="name = $event.target.files[0]?.name || ''">
                     </span>
+                    <p class="mt-1 text-sm text-red-600" data-upload-note></p>
                 </label>
                 @error('proof')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
-                <button class="w-full rounded-xl bg-nu px-6 py-4 text-base font-semibold text-white shadow-sm" :class="sending && 'opacity-60'">Kirim bukti</button>
+                <button type="submit" class="w-full rounded-xl bg-nu px-6 py-4 text-base font-semibold text-white shadow-sm" :disabled="sending" :class="sending && 'opacity-60'">
+                    <span x-text="sending ? 'Mengirim bukti...' : 'Kirim bukti'">Kirim bukti</span>
+                </button>
             </form>
         @endif
 
