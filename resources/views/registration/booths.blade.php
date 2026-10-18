@@ -6,7 +6,7 @@
     <section class="mx-auto max-w-6xl px-4 py-10">
         <p class="text-sm font-semibold text-nu">Langkah 2 dari 4</p>
         <h1 class="mt-2 text-3xl font-bold">Pilih nomor tenda</h1>
-        <p class="mt-2 text-sm text-slate-600">Klik area bernomor 1–8 pada denah, atau pilih kartu di bawah. Untuk setiap nomor, tentukan pakai tenda panitia atau tidak. Harga tanpa tenda hanya biaya tempat. Panitia yang menempatkan posisi tepat di dalam kotak. Slot belum dikunci sampai Anda menekan konfirmasi. Sisa kuota nomor ini: {{ $remaining }} dari maksimal {{ $event->config()->maxSlots() }} slot aktif ({{ $active }} sudah terpakai).</p>
+        <p class="mt-2 text-sm text-slate-600">Klik area bernomor 1–8 pada denah, atau pilih kartu di bawah. Dalam satu nomor kotak bisa diambil lebih dari satu slot, misalnya dua lapak berdampingan di blok yang sama. Untuk setiap nomor, tentukan pakai tenda panitia atau tidak. Harga tanpa tenda hanya biaya tempat. Panitia yang menempatkan posisi tepat di dalam kotak. Slot belum dikunci sampai Anda menekan konfirmasi. Sisa kuota nomor ini: {{ $remaining }} dari maksimal {{ $event->config()->maxSlots() }} slot aktif ({{ $active }} sudah terpakai).</p>
         @if ($errors->any())
             <div class="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
         @endif

@@ -59,7 +59,15 @@ class UmkmRegistrationController extends Controller
         $active = $booking->activeSlotCount($event, $applicant['whatsapp']);
         $remaining = max(0, $event->config()->maxSlots() - $active);
         $items = collect(session('umkm_draft.items', []));
-        $selected = $items->pluck('area')->filter()->map(fn ($n) => (int) $n)->values()->all();
+        $selected = $items->pluck('area')->filter()->map(fn ($n) => (int) $n)->unique()->values()->all();
+        $quantities = [];
+        foreach ($items as $item) {
+            if (! isset($item['area'])) {
+                continue;
+            }
+            $area = (int) $item['area'];
+            $quantities[$area] = ($quantities[$area] ?? 0) + 1;
+        }
         $tents = $items
             ->filter(fn ($item) => isset($item['area']))
             ->mapWithKeys(fn ($item) => [(int) $item['area'] => (bool) ($item['with_tent'] ?? false)])
@@ -70,7 +78,7 @@ class UmkmRegistrationController extends Controller
             'applicant' => $applicant,
             'active' => $active,
             'remaining' => $remaining,
-            'map' => $maps->payload($event, 'select', $selected, $remaining, $tents),
+            'map' => $maps->payload($event, 'select', $selected, $remaining, $tents, $quantities),
             'open' => $event->registrationIsOpen(),
         ]);
     }
@@ -83,9 +91,10 @@ class UmkmRegistrationController extends Controller
 
         $areas = $request->areaNumbers();
         $tents = $request->tentChoices();
+        $quantities = $request->quantities();
         $remaining = max(0, $event->config()->maxSlots() - $booking->activeSlotCount($event, $applicant['whatsapp']));
 
-        if (count($areas) > $remaining) {
+        if (array_sum($quantities) > $remaining) {
             return back()->withErrors([
                 'area_numbers' => "Sisa kuota nomor WhatsApp ini {$remaining} slot.",
             ])->withInput();
@@ -96,13 +105,15 @@ class UmkmRegistrationController extends Controller
 
         try {
             foreach ($areas as $area) {
-                $booth = $maps->allocateBooth($event, $area, $usedBoothIds);
-                $usedBoothIds[] = $booth->id;
-                $selections[] = [
-                    'booth_id' => $booth->id,
-                    'area' => $area,
-                    'with_tent' => $tents[$area],
-                ];
+                for ($slot = 0; $slot < $quantities[$area]; $slot++) {
+                    $booth = $maps->allocateBooth($event, $area, $usedBoothIds);
+                    $usedBoothIds[] = $booth->id;
+                    $selections[] = [
+                        'booth_id' => $booth->id,
+                        'area' => $area,
+                        'with_tent' => $tents[$area],
+                    ];
+                }
             }
             $booking->quote($event, $selections);
         } catch (BookingException $exception) {

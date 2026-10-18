@@ -9,7 +9,8 @@ export function registerBoothMap(Alpine) {
         zones: config.zones || [],
         saveUrl: config.saveUrl,
         feedUrl: config.feedUrl,
-        selected: Array.isArray(config.selected) ? config.selected.map(Number) : [],
+        selected: Array.isArray(config.selected) ? [...new Set(config.selected.map(Number))] : [],
+        quantities: config.quantities && !Array.isArray(config.quantities) ? config.quantities : {},
         tentChoices: config.tentChoices && !Array.isArray(config.tentChoices) ? config.tentChoices : {},
         active: null,
         notice: '',
@@ -86,6 +87,7 @@ export function registerBoothMap(Alpine) {
             if (this.isSelected(number)) {
                 this.selected = this.selected.filter((value) => value !== number);
                 this.clearTent(number);
+                this.clearQty(number);
                 this.notice = '';
                 return;
             }
@@ -93,12 +95,47 @@ export function registerBoothMap(Alpine) {
                 this.notice = `Kotak ${number} sudah penuh.`;
                 return;
             }
-            if (this.selected.length >= this.max) {
-                this.notice = `Kuota pilihan pada pendaftaran ini ${this.max} nomor.`;
+            if (this.slotCount() >= this.max) {
+                this.notice = `Kuota pilihan pada pendaftaran ini ${this.max} slot.`;
                 return;
             }
             this.selected.push(number);
-            this.notice = `Kotak ${number} dipilih. Tentukan pakai tenda atau tidak.`;
+            this.quantities = { ...this.quantities, [number]: 1 };
+            this.notice = `Kotak ${number} dipilih. Atur jumlah slot, lalu tentukan pakai tenda atau tidak.`;
+        },
+        quantity(number) {
+            if (!this.isSelected(number)) return 0;
+            const value = Number(this.quantities[number] ?? this.quantities[String(number)] ?? 1);
+            return Math.max(1, value);
+        },
+        slotCount() {
+            return this.selected.reduce((sum, number) => sum + this.quantity(number), 0);
+        },
+        changeQty(number, delta) {
+            const value = Number(number);
+            const area = this.areaOf(value);
+            if (!area || !this.isSelected(value)) return;
+            const next = this.quantity(value) + delta;
+            if (next < 1) {
+                this.toggleArea(area);
+                return;
+            }
+            if (delta > 0 && this.slotCount() >= this.max) {
+                this.notice = `Kuota pilihan pada pendaftaran ini ${this.max} slot.`;
+                return;
+            }
+            if (next > area.available) {
+                this.notice = `Kotak ${value} hanya tersisa ${area.available} slot.`;
+                return;
+            }
+            this.quantities = { ...this.quantities, [value]: next };
+            this.notice = `Kotak ${value}: ${next} slot dalam blok yang sama.`;
+        },
+        clearQty(number) {
+            const next = { ...this.quantities };
+            delete next[number];
+            delete next[String(number)];
+            this.quantities = next;
         },
         setTent(number, withTent) {
             const value = Number(number);
@@ -213,7 +250,13 @@ export function registerBoothMap(Alpine) {
                         if (area && area.available < 1) {
                             this.selected = this.selected.filter((value) => value !== number);
                             this.clearTent(number);
+                            this.clearQty(number);
                             this.notice = `Kotak ${number} baru saja penuh. Pilih nomor lain.`;
+                            return;
+                        }
+                        if (area && this.quantity(number) > area.available) {
+                            this.quantities = { ...this.quantities, [number]: area.available };
+                            this.notice = `Kotak ${number} tersisa ${area.available} slot. Jumlah pilihan disesuaikan.`;
                         }
                     });
                 }

@@ -91,6 +91,27 @@ class RegistrationFlowTest extends HsnTestCase
         $this->assertFalse($registration->items()->firstOrFail()->with_tent);
     }
 
+    public function test_two_slots_can_be_taken_in_the_same_numbered_block(): void
+    {
+        $this->post(route('register.applicant'), $this->applicant('081255500001', 'Dua Slot Satu Kotak'))
+            ->assertRedirect(route('register.booths'));
+
+        $this->post(route('register.booths.store'), [
+            'area_numbers' => [2],
+            'quantities' => [2 => 2],
+            'with_tent' => [2 => '0'],
+        ])->assertRedirect(route('register.confirm'));
+
+        $this->post(route('register.store'), ['terms' => '1'])->assertRedirect();
+
+        $registration = Registration::query()->where('whatsapp', 'like', '%81255500001')->firstOrFail();
+        $items = $registration->items()->with('booth.zone')->get();
+        $this->assertCount(2, $items);
+        $this->assertEquals(['2', '2'], $items->map(fn ($item) => (string) $item->booth->zone->code)->all());
+        $this->assertCount(2, $items->pluck('booth_id')->unique());
+        $this->assertSame(200000, $registration->grand_total);
+    }
+
     public function test_admin_registration_list_accepts_a_page_size(): void
     {
         $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();

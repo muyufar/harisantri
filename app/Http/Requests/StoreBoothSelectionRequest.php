@@ -16,6 +16,8 @@ class StoreBoothSelectionRequest extends FormRequest
         return [
             'area_numbers' => ['required', 'array', 'min:1'],
             'area_numbers.*' => ['integer', 'distinct', 'between:1,8'],
+            'quantities' => ['sometimes', 'array'],
+            'quantities.*' => ['integer', 'min:1', 'max:3'],
             'with_tent' => ['required', 'array'],
             'with_tent.*' => ['boolean'],
         ];
@@ -62,5 +64,17 @@ class StoreBoothSelectionRequest extends FormRequest
         }
 
         return $choices;
+    }
+
+    /** @return array<int, int> */
+    public function quantities(): array
+    {
+        $quantities = [];
+
+        foreach ($this->areaNumbers() as $number) {
+            $quantities[$number] = min(3, max(1, (int) $this->input('quantities.'.$number, 1)));
+        }
+
+        return $quantities;
     }
 }

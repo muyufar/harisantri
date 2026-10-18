@@ -43,7 +43,7 @@
 
     @if ($payload['mode'] === 'select')
         <p class="text-sm text-slate-600">Klik kotak bernomor pada denah untuk memilih area tenda. Panitia yang mengatur sisi/posisi tepat di dalam kotak tersebut.</p>
-        <p class="text-sm font-medium text-nu" x-show="mode === 'select'">Terpilih <span x-text="selected.length"></span> dari <span x-text="max"></span> nomor.</p>
+        <p class="text-sm font-medium text-nu" x-show="mode === 'select'">Terpilih <span x-text="slotCount()"></span> dari <span x-text="max"></span> slot.</p>
     @elseif ($payload['mode'] === 'edit')
         <div class="flex flex-wrap gap-3 text-xs font-medium">
             <span class="rounded-full bg-nu px-3 py-1 text-white">Slot internal</span>
@@ -122,6 +122,7 @@
                 <template x-for="number in selected" :key="'sel-'+number">
                     <div>
                         <input type="hidden" name="area_numbers[]" :value="number">
+                        <input type="hidden" :name="'quantities['+number+']'" :value="quantity(number)">
                         <input type="hidden" :name="'with_tent['+number+']'" :value="tentValue(number)">
                     </div>
                 </template>
@@ -153,6 +154,14 @@
                         <p class="mt-2 text-xs font-semibold" :class="statusClass(area.status)" x-text="area.status_label"></p>
                         <p class="mt-1 text-xs text-slate-500">Tersedia <span x-text="area.available"></span> / <span x-text="area.total"></span></p>
                     </button>
+                    <div class="mt-3 flex items-center justify-between" x-show="mode === 'select' && isSelected(area.number)" x-cloak>
+                        <span class="text-xs font-medium">Jumlah slot di kotak ini</span>
+                        <span class="flex items-center gap-2">
+                            <button type="button" class="h-8 w-8 rounded-lg border border-slate-200 text-sm font-semibold" @click="changeQty(area.number, -1)" aria-label="Kurangi slot">−</button>
+                            <span class="w-4 text-center text-sm font-semibold" x-text="quantity(area.number)"></span>
+                            <button type="button" class="h-8 w-8 rounded-lg border border-slate-200 text-sm font-semibold" @click="changeQty(area.number, 1)" aria-label="Tambah slot">+</button>
+                        </span>
+                    </div>
                     <div class="mt-3 grid grid-cols-2 gap-2" x-show="mode === 'select' && isSelected(area.number)" x-cloak>
                         <button type="button" class="rounded-xl px-2 py-2 text-xs font-semibold" :class="tentValue(area.number) === '1' ? 'bg-nu text-white' : 'border border-slate-200'" @click="setTent(area.number, true)">Pakai tenda</button>
                         <button type="button" class="rounded-xl px-2 py-2 text-xs font-semibold" :class="tentValue(area.number) === '0' ? 'bg-nu text-white' : 'border border-slate-200'" @click="setTent(area.number, false)">Tanpa tenda</button>
