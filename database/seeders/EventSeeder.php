@@ -31,7 +31,7 @@ class EventSeeder extends Seeder
             'tagline' => 'Pendaftaran Lapak UMKM & Sponsorship HSN 2026',
             'description' => 'PCNU Kabupaten Magelang membuka pendaftaran lapak UMKM dan pengajuan sponsorship untuk Jalan Sehat Santri dan Bazar UMKM pada Hari Santri Nasional 2026.',
             'registration_closes_at' => '2026-10-28 23:59:00',
-            'hold_hours' => '24',
+            'hold_hours' => '2',
             'max_slots_per_applicant' => '3',
             'contact_name' => 'Panitia HSN PCNU Kabupaten Magelang',
             'contact_whatsapp' => '6282340715548',

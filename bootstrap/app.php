@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsurePermission;
+use App\Http\Middleware\ReleaseExpiredHolds;
 use App\Http\Middleware\ShareEventContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/admin/masuk');
         $middleware->redirectUsersTo('/admin');
         $middleware->web(append: [
+            ReleaseExpiredHolds::class,
             ShareEventContext::class,
         ]);
         $middleware->alias([

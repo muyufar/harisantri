@@ -56,7 +56,7 @@ Buka `http://127.0.0.1:8000`. Di Laragon, arahkan document root ke folder `publi
 
 ## Penjadwalan hold
 
-Slot tanpa bukti pembayaran dilepas setelah `hold_hours` (bawaan 24 jam). Bukti yang sudah diunggah tidak dilepas sampai verifikasi selesai. Jalankan penjadwal setiap menit:
+Slot tanpa bukti pembayaran dilepas setelah `hold_hours` (bawaan 2 jam). Bukti yang sudah diunggah tidak dilepas sampai verifikasi selesai. Situs juga melepas slot kedaluwarsa pada setiap kunjungan. Jalankan penjadwal setiap menit sebagai cadangan:
 
 ```bash
 php artisan schedule:work

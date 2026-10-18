@@ -12,7 +12,7 @@
         <label class="text-sm">Penyelenggara<input class="mt-1 w-full rounded-xl border px-3 py-2" name="organizer" value="{{ $event->organizer }}"></label>
         <label class="text-sm md:col-span-2">Judul publik<input class="mt-1 w-full rounded-xl border px-3 py-2" name="tagline" value="{{ $config->get('tagline') }}"></label>
         <label class="text-sm md:col-span-2">Deskripsi<textarea class="mt-1 w-full rounded-xl border px-3 py-2" name="description" rows="3">{{ $config->get('description') }}</textarea></label>
-        <label class="text-sm">Jam hold<input class="mt-1 w-full rounded-xl border px-3 py-2" type="number" name="hold_hours" value="{{ $config->holdHours() }}"></label>
+        <label class="text-sm">Jam tahan slot yang belum dibayar<input class="mt-1 w-full rounded-xl border px-3 py-2" type="number" name="hold_hours" value="{{ $config->holdHours() }}" min="1" max="168"></label>
         <label class="text-sm">Maksimal slot / WhatsApp<input class="mt-1 w-full rounded-xl border px-3 py-2" type="number" name="max_slots_per_applicant" value="{{ $config->maxSlots() }}"></label>
         <label class="text-sm">Nama kontak<input class="mt-1 w-full rounded-xl border px-3 py-2" name="contact_name" value="{{ $config->get('contact_name') }}"></label>
         <label class="text-sm">WhatsApp panitia<input class="mt-1 w-full rounded-xl border px-3 py-2" name="contact_whatsapp" value="{{ $config->get('contact_whatsapp') }}"></label>

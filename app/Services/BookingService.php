@@ -98,6 +98,8 @@ class BookingService
             throw new BookingException('Pendaftaran sudah ditutup.');
         }
 
+        app(ExpiryService::class)->releaseExpired();
+
         $selections = $this->normalizeSelections($selections);
         $phone = Phone::normalize((string) $applicantData['whatsapp']);
         $max = $event->config()->maxSlots();

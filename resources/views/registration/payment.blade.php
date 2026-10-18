@@ -39,7 +39,7 @@
                 </ol>
                 <p class="mt-3">{{ $instructions['note'] }}</p>
                 @if ($registration->hold_expires_at && $registration->canUploadProof())
-                    <p class="mt-2">Batas unggah bukti: {{ $registration->hold_expires_at->timezone('Asia/Jakarta')->translatedFormat('l, j F Y H.i') }} WIB.</p>
+                    <p class="mt-2">Batas unggah bukti: {{ $registration->hold_expires_at->timezone('Asia/Jakarta')->translatedFormat('l, j F Y H.i') }} WIB. Lewat waktu ini tanpa bukti, slot dilepas dan dapat dipesan pendaftar lain.</p>
                 @endif
             </div>
         @endif

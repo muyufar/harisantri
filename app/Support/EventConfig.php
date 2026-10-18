@@ -27,7 +27,7 @@ class EventConfig
 
     public function holdHours(): int
     {
-        return max(1, (int) $this->get('hold_hours', 24));
+        return max(1, (int) $this->get('hold_hours', 2));
     }
 
     public function maxSlots(): int

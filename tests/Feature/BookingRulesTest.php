@@ -123,7 +123,10 @@ class BookingRulesTest extends HsnTestCase
 
         app(PaymentService::class)->submitProof($reviewing, UploadedFile::fake()->image('bukti.jpg'));
 
-        $this->travel(25)->hours();
+        $this->travel(1)->hours();
+        $this->assertSame(0, app(ExpiryService::class)->releaseExpired());
+
+        $this->travel(1)->hours();
         $this->assertSame(1, app(ExpiryService::class)->releaseExpired());
 
         $this->assertSame(RegistrationStatus::Expired, $waiting->fresh()->status);
