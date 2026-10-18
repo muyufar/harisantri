@@ -123,7 +123,8 @@ class BoothMapService
     }
 
     /** @param  array<int, int>  $selectedAreas */
-    public function payload(Event $event, string $mode, array $selectedAreas = [], ?int $remaining = null): array
+    /** @param  array<int, bool>  $tentChoices */
+    public function payload(Event $event, string $mode, array $selectedAreas = [], ?int $remaining = null, array $tentChoices = []): array
     {
         $booths = $this->present($event);
 
@@ -135,6 +136,7 @@ class BoothMapService
             'areas' => $this->areaCards($event),
             'zones' => $event->zones()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name', 'type', 'code']),
             'selected' => array_values(array_map('intval', $selectedAreas)),
+            'tentChoices' => $tentChoices,
             'saveUrl' => $mode === 'edit' ? route('admin.map.update') : null,
             'feedUrl' => route('booths.feed'),
             'landmarks' => $this->landmarks(),

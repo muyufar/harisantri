@@ -10,6 +10,7 @@ export function registerBoothMap(Alpine) {
         saveUrl: config.saveUrl,
         feedUrl: config.feedUrl,
         selected: Array.isArray(config.selected) ? config.selected.map(Number) : [],
+        tentChoices: config.tentChoices && !Array.isArray(config.tentChoices) ? config.tentChoices : {},
         active: null,
         notice: '',
         scale: 1,
@@ -26,6 +27,16 @@ export function registerBoothMap(Alpine) {
         filterStatus: 'all',
         query: '',
         init() {
+            const form = this.$el.closest('form');
+            if (form && this.mode === 'select') {
+                form.addEventListener('submit', (event) => {
+                    const missing = this.selected.filter((number) => this.tentValue(number) === '');
+                    if (missing.length === 0) return;
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    this.notice = `Pilih pakai tenda atau tidak untuk Kotak ${missing.join(', ')}.`;
+                }, true);
+            }
             if (this.mode !== 'edit' && this.feedUrl) {
                 this.timer = setInterval(() => this.refresh(), 20000);
             }
@@ -74,6 +85,7 @@ export function registerBoothMap(Alpine) {
             const number = Number(area.number);
             if (this.isSelected(number)) {
                 this.selected = this.selected.filter((value) => value !== number);
+                this.clearTent(number);
                 this.notice = '';
                 return;
             }
@@ -86,7 +98,39 @@ export function registerBoothMap(Alpine) {
                 return;
             }
             this.selected.push(number);
-            this.notice = `Kotak ${number} dipilih.`;
+            this.notice = `Kotak ${number} dipilih. Tentukan pakai tenda atau tidak.`;
+        },
+        setTent(number, withTent) {
+            const value = Number(number);
+            if (!this.isSelected(value)) {
+                const area = this.areaOf(value);
+                if (!area) return;
+                this.toggleArea(area);
+                if (!this.isSelected(value)) return;
+            }
+            this.tentChoices = { ...this.tentChoices, [value]: withTent };
+            this.notice = withTent
+                ? `Kotak ${value} memakai tenda panitia.`
+                : `Kotak ${value} tanpa tenda.`;
+        },
+        clearTent(number) {
+            const next = { ...this.tentChoices };
+            delete next[number];
+            delete next[String(number)];
+            this.tentChoices = next;
+        },
+        tentValue(number) {
+            const value = this.tentChoices[number] ?? this.tentChoices[String(number)];
+            if (value === true || value === 1 || value === '1') return '1';
+            if (value === false || value === 0 || value === '0') return '0';
+            return '';
+        },
+        placeTotal(area) {
+            return area?.place_price ?? null;
+        },
+        tentTotal(area) {
+            if (area?.place_price === null || area?.place_price === undefined) return null;
+            return Number(area.place_price) + Number(area.tent_price || 0);
         },
         color(booth) {
             if (booth.status === 'blocked') return 'border border-slate-700 bg-slate-500/70';
@@ -168,6 +212,7 @@ export function registerBoothMap(Alpine) {
                         const area = this.areaOf(number);
                         if (area && area.available < 1) {
                             this.selected = this.selected.filter((value) => value !== number);
+                            this.clearTent(number);
                             this.notice = `Kotak ${number} baru saja penuh. Pilih nomor lain.`;
                         }
                     });

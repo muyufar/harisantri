@@ -23,12 +23,13 @@
     <p>{{ $registration->applicant->business_name }} — {{ $registration->applicant->full_name }}</p>
     <p>NIK {{ $registration->applicant->nik }}</p>
     <table>
-        <tr><th>Area</th><th>Slot panitia</th><th>Ukuran</th><th>Nominal</th></tr>
+        <tr><th>Area</th><th>Slot panitia</th><th>Ukuran</th><th>Tenda</th><th>Nominal</th></tr>
         @foreach ($registration->items as $item)
             <tr>
                 <td>{{ $item->zone_name }}</td>
                 <td>{{ $item->booth_code }}</td>
                 <td>{{ $item->sizeLabel() }}</td>
+                <td>{{ $item->with_tent ? 'Pakai' : 'Tidak' }}</td>
                 <td>{{ rupiah($item->line_total) }}</td>
             </tr>
         @endforeach

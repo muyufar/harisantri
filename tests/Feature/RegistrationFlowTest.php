@@ -27,6 +27,7 @@ class RegistrationFlowTest extends HsnTestCase
 
         $this->post(route('register.booths.store'), [
             'area_numbers' => [2],
+            'with_tent' => [2 => '1'],
             'grand_total' => 1,
         ])->assertRedirect(route('register.confirm'));
 
@@ -37,6 +38,7 @@ class RegistrationFlowTest extends HsnTestCase
 
         $registration = Registration::query()->firstOrFail();
         $this->assertSame(200000, $registration->grand_total);
+        $this->assertTrue($registration->items()->firstOrFail()->with_tent);
         $this->assertSame(RegistrationStatus::AwaitingPayment, $registration->status);
 
         $this->post(URL::temporarySignedRoute('register.proof', now()->addHour(), $registration), [
@@ -61,6 +63,23 @@ class RegistrationFlowTest extends HsnTestCase
         $this->actingAs($field)->post(route('admin.checkin.store'), [
             'token' => app(QrService::class)->token($item),
         ])->assertOk()->assertSee('Check-in tercatat');
+    }
+
+    public function test_registration_without_tent_charges_only_the_place_price(): void
+    {
+        $this->post(route('register.applicant'), $this->applicant('081298765432', 'Tanpa Tenda'))
+            ->assertRedirect(route('register.booths'));
+
+        $this->post(route('register.booths.store'), [
+            'area_numbers' => [2],
+            'with_tent' => [2 => '0'],
+        ])->assertRedirect(route('register.confirm'));
+
+        $this->post(route('register.store'), ['terms' => '1'])->assertRedirect();
+
+        $registration = Registration::query()->where('whatsapp', 'like', '%81298765432')->firstOrFail();
+        $this->assertSame(100000, $registration->grand_total);
+        $this->assertFalse($registration->items()->firstOrFail()->with_tent);
     }
 
     public function test_status_lookup_hides_details_until_whatsapp_matches(): void

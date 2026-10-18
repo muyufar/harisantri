@@ -17,7 +17,8 @@
                 <article class="rounded-2xl bg-white p-4 text-sm">
                     <p class="font-semibold">{{ $line['code'] }} · {{ $line['size'] }}</p>
                     <p class="text-slate-600">Posisi tepat di dalam kotak ditentukan panitia.</p>
-                    <p>Paket tenda {{ rupiah($line['line_total']) }}</p>
+                    <p>Tempat {{ rupiah($line['place_price']) }}</p>
+                    <p>{{ $line['with_tent'] ? 'Tenda panitia '.rupiah($line['tent_price']) : 'Tanpa tenda' }}</p>
                     <p class="font-semibold">Subtotal {{ rupiah($line['line_total']) }}</p>
                 </article>
             @endforeach

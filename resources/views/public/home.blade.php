@@ -44,7 +44,8 @@
                     <article class="rounded-3xl border border-slate-200 bg-white p-6">
                         <h3 class="text-xl font-bold">{{ $price->sizeLabel() }}</h3>
                         <dl class="mt-4 space-y-2 text-sm">
-                            <div class="flex justify-between"><dt>Paket tenda (tempat + tenda)</dt><dd class="font-semibold text-nu">{{ rupiah($price->place_price + $price->tent_price) }}</dd></div>
+                            <div class="flex justify-between"><dt>Tempat saja</dt><dd class="font-semibold">{{ rupiah($price->place_price) }}</dd></div>
+                            <div class="flex justify-between"><dt>Dengan tenda panitia</dt><dd class="font-semibold text-nu">{{ rupiah($price->place_price + $price->tent_price) }}</dd></div>
                         </dl>
                     </article>
                 @empty

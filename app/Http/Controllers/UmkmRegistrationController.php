@@ -58,14 +58,19 @@ class UmkmRegistrationController extends Controller
 
         $active = $booking->activeSlotCount($event, $applicant['whatsapp']);
         $remaining = max(0, $event->config()->maxSlots() - $active);
-        $selected = collect(session('umkm_draft.items', []))->pluck('area')->filter()->map(fn ($n) => (int) $n)->values()->all();
+        $items = collect(session('umkm_draft.items', []));
+        $selected = $items->pluck('area')->filter()->map(fn ($n) => (int) $n)->values()->all();
+        $tents = $items
+            ->filter(fn ($item) => isset($item['area']))
+            ->mapWithKeys(fn ($item) => [(int) $item['area'] => (bool) ($item['with_tent'] ?? false)])
+            ->all();
 
         return view('registration.booths', [
             'event' => $event,
             'applicant' => $applicant,
             'active' => $active,
             'remaining' => $remaining,
-            'map' => $maps->payload($event, 'select', $selected, $remaining),
+            'map' => $maps->payload($event, 'select', $selected, $remaining, $tents),
             'open' => $event->registrationIsOpen(),
         ]);
     }
@@ -77,6 +82,7 @@ class UmkmRegistrationController extends Controller
         abort_unless($applicant, 403);
 
         $areas = $request->areaNumbers();
+        $tents = $request->tentChoices();
         $remaining = max(0, $event->config()->maxSlots() - $booking->activeSlotCount($event, $applicant['whatsapp']));
 
         if (count($areas) > $remaining) {
@@ -95,7 +101,7 @@ class UmkmRegistrationController extends Controller
                 $selections[] = [
                     'booth_id' => $booth->id,
                     'area' => $area,
-                    'with_tent' => true,
+                    'with_tent' => $tents[$area],
                 ];
             }
             $booking->quote($event, $selections);

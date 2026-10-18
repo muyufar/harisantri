@@ -14,7 +14,7 @@
                 <article class="rounded-2xl bg-white p-4 text-sm">
                     <p class="font-semibold">{{ $item->zone_name }} · {{ $item->sizeLabel() }}</p>
                     <p class="text-slate-600">Posisi di dalam kotak diatur panitia · slot {{ $item->booth_code }}</p>
-                    <p>Paket {{ rupiah($item->line_total) }}</p>
+                    <p>{{ $item->with_tent ? 'Dengan tenda panitia' : 'Tanpa tenda' }} · {{ rupiah($item->line_total) }}</p>
                 </article>
             @endforeach
         </div>

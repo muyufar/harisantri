@@ -120,32 +120,44 @@
         <template x-if="mode === 'select'">
             <div>
                 <template x-for="number in selected" :key="'sel-'+number">
-                    <input type="hidden" name="area_numbers[]" :value="number">
+                    <div>
+                        <input type="hidden" name="area_numbers[]" :value="number">
+                        <input type="hidden" :name="'with_tent['+number+']'" :value="tentValue(number)">
+                    </div>
                 </template>
             </div>
         </template>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <template x-for="area in areas" :key="'card-'+area.number">
-                <button
-                    type="button"
-                    class="rounded-2xl border bg-white p-4 text-left transition"
+                <article
+                    class="rounded-2xl border bg-white p-4 text-left"
                     :class="isSelected(area.number) ? 'border-nu ring-2 ring-nu/30' : 'border-slate-200'"
-                    @click="toggleArea(area)"
-                    :disabled="mode === 'select' && area.available < 1 && !isSelected(area.number)"
                 >
-                    <div class="flex items-center gap-2">
-                        <span class="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white" :style="`background:${area.color}`" x-text="area.number"></span>
-                        <div>
-                            <h3 class="font-semibold" x-text="area.name"></h3>
-                            <p class="text-xs text-slate-500" x-text="area.group"></p>
+                    <button
+                        type="button"
+                        class="w-full text-left"
+                        @click="toggleArea(area)"
+                        :disabled="mode === 'select' && area.available < 1 && !isSelected(area.number)"
+                    >
+                        <div class="flex items-center gap-2">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white" :style="`background:${area.color}`" x-text="area.number"></span>
+                            <div>
+                                <h3 class="font-semibold" x-text="area.name"></h3>
+                                <p class="text-xs text-slate-500" x-text="area.group"></p>
+                            </div>
+                            <span class="ml-auto text-xs font-semibold text-nu" x-show="isSelected(area.number)">Dipilih</span>
                         </div>
-                        <span class="ml-auto text-xs font-semibold text-nu" x-show="isSelected(area.number)">Dipilih</span>
+                        <p class="mt-3 text-sm" x-text="area.size_label"></p>
+                        <p class="mt-2 text-sm" x-show="placeTotal(area) !== null">Dengan tenda <span class="font-semibold text-nu" x-text="money(tentTotal(area))"></span></p>
+                        <p class="text-sm" x-show="placeTotal(area) !== null">Tanpa tenda <span class="font-semibold" x-text="money(placeTotal(area))"></span></p>
+                        <p class="mt-2 text-xs font-semibold" :class="statusClass(area.status)" x-text="area.status_label"></p>
+                        <p class="mt-1 text-xs text-slate-500">Tersedia <span x-text="area.available"></span> / <span x-text="area.total"></span></p>
+                    </button>
+                    <div class="mt-3 grid grid-cols-2 gap-2" x-show="mode === 'select' && isSelected(area.number)" x-cloak>
+                        <button type="button" class="rounded-xl px-2 py-2 text-xs font-semibold" :class="tentValue(area.number) === '1' ? 'bg-nu text-white' : 'border border-slate-200'" @click="setTent(area.number, true)">Pakai tenda</button>
+                        <button type="button" class="rounded-xl px-2 py-2 text-xs font-semibold" :class="tentValue(area.number) === '0' ? 'bg-nu text-white' : 'border border-slate-200'" @click="setTent(area.number, false)">Tanpa tenda</button>
                     </div>
-                    <p class="mt-3 text-sm" x-text="area.size_label"></p>
-                    <p class="mt-1 text-sm font-semibold text-nu" x-show="area.line_total" x-text="money(area.line_total)"></p>
-                    <p class="mt-2 text-xs font-semibold" :class="statusClass(area.status)" x-text="area.status_label"></p>
-                    <p class="mt-1 text-xs text-slate-500">Tersedia <span x-text="area.available"></span> / <span x-text="area.total"></span></p>
-                </button>
+                </article>
             </template>
         </div>
     @endif
