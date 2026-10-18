@@ -56,9 +56,12 @@
                     <span class="mb-1 block font-medium">Deskripsi produk</span>
                     <textarea class="w-full rounded-xl border border-slate-200 px-3 py-3" name="product_description" rows="4" required>{{ old('product_description', $draft['product_description'] ?? '') }}</textarea>
                 </label>
-                <label class="block text-sm">
+                <label class="block text-sm" x-data="{ name: '' }">
                     <span class="mb-1 block font-medium">Foto produk atau logo usaha (opsional)</span>
-                    <input class="w-full text-sm" type="file" name="logo" accept="image/jpeg,image/png,image/webp">
+                    <span class="relative mt-1 flex w-full cursor-pointer items-center justify-center rounded-xl border-2 border-gold bg-gold px-6 py-4 text-base font-semibold text-nu-dark">
+                        <span x-text="name || 'Pilih foto atau logo'"></span>
+                        <input class="absolute inset-0 w-full cursor-pointer" style="opacity:0" type="file" name="logo" accept="image/jpeg,image/png,image/webp" @change="name = $event.target.files.length ? $event.target.files[0].name : ''">
+                    </span>
                 </label>
                 <label class="block text-sm">
                     <span class="mb-1 block font-medium">Catatan kebutuhan khusus</span>
