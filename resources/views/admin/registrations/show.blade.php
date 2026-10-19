@@ -72,7 +72,14 @@
             </form>
         </div>
     @endif
-    @if (auth()->user()->canPermission('registrations.manage'))
+    @if (auth()->user()->canPermission('registrations.manage') && $registration->status === \App\Enums\RegistrationStatus::Expired)
+        <form method="POST" action="{{ route('admin.registrations.restore', $registration) }}" class="mt-4 space-y-2 rounded-2xl bg-white p-4" onsubmit="return confirm('Aktifkan kembali pendaftaran ini? Slot ditahan ulang dan pendaftar bisa bayar lagi.')">
+            @csrf
+            <p class="text-sm text-slate-600">Slot semula ditahan lagi kalau masih kosong. Kalau sudah terisi, sistem mengambil slot kosong lain di kotak yang sama. Harga tidak berubah.</p>
+            <button class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white">Aktifkan kembali</button>
+        </form>
+    @endif
+    @if (auth()->user()->canPermission('registrations.manage') && ! in_array($registration->status, [\App\Enums\RegistrationStatus::Cancelled, \App\Enums\RegistrationStatus::Expired], true))
         <form method="POST" action="{{ route('admin.registrations.cancel', $registration) }}" class="mt-4 space-y-2 rounded-2xl bg-white p-4" onsubmit="return confirm('Batalkan pendaftaran dan lepas slot?')">
             @csrf
             <textarea class="w-full rounded-xl border border-slate-200 px-3 py-2" name="note" placeholder="Catatan pembatalan"></textarea>

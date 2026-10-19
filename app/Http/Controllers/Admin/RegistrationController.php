@@ -96,6 +96,15 @@ class RegistrationController extends AdminController
         }, 'Lapak dipindah ke '.TentLayout::area((int) $data['area'])['name'].'. Harga tidak berubah.');
     }
 
+    public function restore(Registration $registration, BookingService $booking)
+    {
+        $until = now()->addHours($this->event()->config()->holdHours())->timezone('Asia/Jakarta')->format('d/m/Y H.i');
+
+        return $this->decide($registration, function () use ($registration, $booking) {
+            $booking->restore($registration);
+        }, 'Pendaftaran diaktifkan kembali sampai '.$until.' WIB. Pendaftar bisa mengunggah bukti lewat cek status. Harga tidak berubah.');
+    }
+
     public function cancel(Request $request, Registration $registration, PaymentService $payments)
     {
         $data = $request->validate([

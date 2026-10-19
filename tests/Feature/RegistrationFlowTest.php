@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\PaymentStatus;
 use App\Enums\RegistrationStatus;
 use App\Enums\SponsorshipStatus;
 use App\Models\Booth;
@@ -246,6 +247,96 @@ class RegistrationFlowTest extends HsnTestCase
         $this->assertSame(RegistrationStatus::Cancelled, $registration->status);
         $this->assertSame('Pendaftar mengundurkan diri', $registration->cancellation_note);
         $this->assertNull($booth->fresh()->reservation);
+    }
+
+    public function test_admin_can_restore_an_expired_registration_on_the_same_booth(): void
+    {
+        $booth = Booth::query()->whereHas('zone', fn ($query) => $query->where('code', '2'))->firstOrFail();
+        $registration = app(\App\Services\BookingService::class)->create(Event(), $this->applicant('081288800001', 'Aktif Lagi'), [
+            ['booth_id' => $booth->id, 'with_tent' => true],
+        ]);
+        $total = $registration->grand_total;
+
+        $this->travel(3)->hours();
+        app(\App\Services\ExpiryService::class)->releaseExpired();
+        $registration->refresh();
+        $this->assertSame(RegistrationStatus::Expired, $registration->status);
+        $this->assertNull($booth->fresh()->reservation);
+
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.show', $registration))
+            ->assertOk()
+            ->assertSee('Aktifkan kembali');
+
+        $this->actingAs($admin)
+            ->post(route('admin.registrations.restore', $registration))
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $registration->refresh()->load('items.booth.zone', 'payment');
+        $item = $registration->items->first();
+        $this->assertSame(RegistrationStatus::AwaitingPayment, $registration->status);
+        $this->assertTrue($registration->hold_expires_at->isFuture());
+        $this->assertSame($booth->id, $item->booth_id);
+        $this->assertSame($total, $registration->grand_total);
+        $this->assertTrue($item->with_tent);
+        $this->assertSame(PaymentStatus::Pending, $registration->payment->status);
+        $this->assertNotNull($item->booth->reservation);
+    }
+
+    public function test_restoring_moves_to_another_slot_in_the_same_box_when_the_old_one_is_taken(): void
+    {
+        $booths = Booth::query()->whereHas('zone', fn ($query) => $query->where('code', '2'))->orderBy('code')->limit(2)->get();
+        $original = $booths[0];
+        $registration = app(\App\Services\BookingService::class)->create(Event(), $this->applicant('081288800002', 'Pindah Saat Aktif'), [
+            ['booth_id' => $original->id, 'with_tent' => false],
+        ]);
+
+        $this->travel(3)->hours();
+        app(\App\Services\ExpiryService::class)->releaseExpired();
+
+        $taken = app(\App\Services\BookingService::class)->create(Event(), $this->applicant('081288800003', 'Pengganti Slot'), [
+            ['booth_id' => $original->id, 'with_tent' => false],
+        ]);
+
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+        $this->actingAs($admin)
+            ->post(route('admin.registrations.restore', $registration))
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $item = $registration->fresh()->items()->with('booth.zone')->firstOrFail();
+        $this->assertNotSame($original->id, $item->booth_id);
+        $this->assertSame('2', (string) $item->booth->zone->code);
+        $this->assertSame(100000, $registration->fresh()->grand_total);
+        $this->assertSame($original->id, $taken->fresh()->items()->first()->booth_id);
+    }
+
+    public function test_restore_is_rejected_when_the_whatsapp_quota_is_full(): void
+    {
+        $booths = Booth::query()->whereHas('zone', fn ($query) => $query->where('code', '2'))->orderBy('code')->limit(4)->get();
+        $expired = app(\App\Services\BookingService::class)->create(Event(), $this->applicant('081288800004', 'Kuota Penuh'), [
+            ['booth_id' => $booths[0]->id, 'with_tent' => false],
+        ]);
+
+        $this->travel(3)->hours();
+        app(\App\Services\ExpiryService::class)->releaseExpired();
+
+        app(\App\Services\BookingService::class)->create(Event(), $this->applicant('081288800004', 'Kuota Penuh'), [
+            ['booth_id' => $booths[1]->id, 'with_tent' => false],
+            ['booth_id' => $booths[2]->id, 'with_tent' => false],
+            ['booth_id' => $booths[3]->id, 'with_tent' => false],
+        ]);
+
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+        $this->actingAs($admin)
+            ->from(route('admin.registrations.show', $expired))
+            ->post(route('admin.registrations.restore', $expired))
+            ->assertRedirect(route('admin.registrations.show', $expired))
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame(RegistrationStatus::Expired, $expired->fresh()->status);
     }
 
     public function test_payment_page_shows_qris_instead_of_bank_transfer(): void

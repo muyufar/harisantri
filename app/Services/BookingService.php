@@ -257,6 +257,138 @@ class BookingService
         return array_values($normalized);
     }
 
+    public function restore(Registration $registration): Registration
+    {
+        return DB::transaction(function () use ($registration) {
+            $registration = Registration::query()->lockForUpdate()->findOrFail($registration->id);
+            $registration->load(['event', 'items', 'payment']);
+
+            if ($registration->status !== RegistrationStatus::Expired) {
+                throw new BookingException('Hanya pendaftaran kedaluwarsa yang bisa diaktifkan kembali.');
+            }
+
+            if ($registration->items->isEmpty()) {
+                throw new BookingException('Pendaftaran ini tidak punya slot.');
+            }
+
+            $phone = Phone::normalize($registration->whatsapp);
+            $this->lockPhone($phone);
+            $max = $registration->event->config()->maxSlots();
+            $active = $this->activeSlotCount($registration->event, $phone);
+            $needed = $registration->items->count();
+
+            if ($active + $needed > $max) {
+                throw new BookingException("Nomor WhatsApp ini sudah memakai {$active} slot aktif. Batasnya {$max} slot, jadi pendaftaran ini belum bisa diaktifkan.");
+            }
+
+            $holdUntil = now()->addHours($registration->event->config()->holdHours());
+            $maps = app(BoothMapService::class);
+            $usedBoothIds = [];
+
+            foreach ($registration->items as $item) {
+                $item = RegistrationItem::query()->lockForUpdate()->findOrFail($item->id);
+                $item->load(['booth.zone', 'reservation']);
+                $booth = $this->reclaimBooth($registration, $item, $maps, $usedBoothIds);
+                $usedBoothIds[] = $booth->id;
+                $item->reservation?->delete();
+                $booth->unsetRelation('reservation');
+                $booth->load('reservation.registrationItem.registration');
+                $this->releaseStaleReservation($booth);
+
+                try {
+                    BoothReservation::create([
+                        'booth_id' => $booth->id,
+                        'registration_item_id' => $item->id,
+                        'expires_at' => $holdUntil,
+                    ]);
+                } catch (UniqueConstraintViolationException) {
+                    throw new BookingException('Slot yang dipilih baru saja terisi. Coba aktifkan lagi.');
+                }
+
+                $item->update([
+                    'booth_id' => $booth->id,
+                    'booth_code' => $booth->code,
+                    'zone_name' => $booth->zone?->name ?? $item->zone_name,
+                ]);
+            }
+
+            $registration->update([
+                'status' => RegistrationStatus::AwaitingPayment,
+                'hold_expires_at' => $holdUntil,
+                'cancelled_at' => null,
+            ]);
+
+            if ($registration->payment && in_array($registration->payment->status, [PaymentStatus::Pending, PaymentStatus::Rejected], true)) {
+                $registration->payment->update([
+                    'status' => PaymentStatus::Pending,
+                    'amount' => $registration->grand_total,
+                ]);
+            } elseif (! $registration->payment) {
+                Payment::create([
+                    'registration_id' => $registration->id,
+                    'amount' => $registration->grand_total,
+                    'method' => 'qris',
+                    'gateway' => 'manual',
+                    'status' => PaymentStatus::Pending,
+                ]);
+            }
+
+            $this->audit->log('registration.restored', $registration, [
+                'code' => $registration->code,
+                'slots' => $needed,
+                'hold_expires_at' => $holdUntil->toDateTimeString(),
+            ]);
+
+            return $registration->fresh(['items', 'payment']);
+        });
+    }
+
+    /**
+     * @param  array<int, int>  $usedBoothIds
+     */
+    private function reclaimBooth(Registration $registration, RegistrationItem $item, BoothMapService $maps, array $usedBoothIds): Booth
+    {
+        $current = $item->booth;
+        if ($current && ! in_array($current->id, $usedBoothIds, true)) {
+            $current->load(['reservation.registrationItem.registration', 'zone']);
+            if (
+                $current->event_id === $registration->event_id
+                && $current->type === 'umkm'
+                && $current->state === 'available'
+                && $current->size === $item->size
+                && $current->displayStatus() === 'available'
+            ) {
+                return $current;
+            }
+        }
+
+        $area = $this->areaNumber($item);
+        if (! $area) {
+            throw new BookingException('Kotak asal slot '.$item->booth_code.' tidak dikenali, jadi pendaftaran belum bisa diaktifkan.');
+        }
+
+        return $maps->allocateBooth($registration->event, $area, array_values(array_unique(array_filter([
+            ...$usedBoothIds,
+            $item->booth_id,
+        ]))));
+    }
+
+    private function areaNumber(RegistrationItem $item): ?int
+    {
+        $code = $item->booth?->zone?->code;
+        if (is_numeric($code)) {
+            return (int) $code;
+        }
+
+        foreach (TentLayout::areas() as $number => $area) {
+            if ($area['name'] === $item->zone_name) {
+                return $number;
+            }
+        }
+
+        return null;
+    }
+
     public function relocate(Registration $registration, RegistrationItem $item, int $areaNumber): Registration
     {
         $area = TentLayout::area($areaNumber);

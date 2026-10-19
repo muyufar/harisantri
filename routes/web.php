@@ -69,6 +69,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::middleware('permission:registrations.manage')->group(function () {
             Route::post('/pendaftaran/{registration}/batal', [AdminRegistrationController::class, 'cancel'])->name('registrations.cancel');
+            Route::post('/pendaftaran/{registration}/aktifkan', [AdminRegistrationController::class, 'restore'])->name('registrations.restore');
             Route::post('/pendaftaran/{registration}/pindah', [AdminRegistrationController::class, 'move'])->name('registrations.move');
         });
 
