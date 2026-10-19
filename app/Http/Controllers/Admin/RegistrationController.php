@@ -91,9 +91,16 @@ class RegistrationController extends AdminController
             return back()->withErrors(['area' => 'Slot yang dipilih tidak ditemukan.']);
         }
 
-        return $this->decide($registration, function () use ($registration, $booking, $item, $data) {
+        try {
+            abort_unless($registration->event_id === $this->event()->id, 404);
             $booking->relocate($registration, $item, (int) $data['area']);
-        }, 'Lapak dipindah ke '.TentLayout::area((int) $data['area'])['name'].'. Harga tidak berubah.');
+        } catch (BookingException $exception) {
+            return back()->withErrors(['status' => $exception->getMessage()]);
+        }
+
+        $area = TentLayout::area((int) $data['area']);
+
+        return back()->with('status', 'Lapak dipindah ke '.$area['name'].'. Total pendaftaran '.rupiah($registration->fresh()->grand_total).'.');
     }
 
     public function restore(Request $request, Registration $registration, BookingService $booking)
@@ -107,7 +114,7 @@ class RegistrationController extends AdminController
 
         return $this->decide($registration, function () use ($registration, $booking, $data) {
             $booking->restore($registration, isset($data['area']) ? (int) $data['area'] : null);
-        }, 'Pendaftaran diaktifkan kembali'.$place.' sampai '.$until.' WIB. Pendaftar bisa mengunggah bukti lewat cek status. Harga tidak berubah.');
+        }, 'Pendaftaran diaktifkan kembali'.$place.' sampai '.$until.' WIB. Pendaftar bisa mengunggah bukti lewat cek status. Harga mengikuti ukuran kotak yang dipilih.');
     }
 
     public function cancel(Request $request, Registration $registration, PaymentService $payments)

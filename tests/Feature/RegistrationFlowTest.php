@@ -157,15 +157,25 @@ class RegistrationFlowTest extends HsnTestCase
         $this->assertNotNull($item->booth->reservation);
 
         $this->actingAs($admin)
-            ->from(route('admin.registrations.show', $registration))
+            ->get(route('admin.registrations.show', $registration))
+            ->assertOk()
+            ->assertSee('Kotak 1')
+            ->assertSee('Kotak 5');
+
+        $this->actingAs($admin)
             ->post(route('admin.registrations.move', $registration), [
                 'item_id' => $item->id,
                 'area' => 1,
             ])
-            ->assertRedirect(route('admin.registrations.show', $registration))
-            ->assertSessionHasErrors('status');
+            ->assertRedirect()
+            ->assertSessionHas('status');
 
-        $this->assertSame('3', (string) $item->fresh()->load('booth.zone')->booth->zone->code);
+        $item->refresh()->load('booth.zone');
+        $this->assertSame('1', (string) $item->booth->zone->code);
+        $this->assertSame('3x3', $item->size);
+        $this->assertSame(150000, $item->line_total);
+        $this->assertSame(150000, $registration->fresh()->grand_total);
+        $this->assertSame(150000, $registration->payment()->first()->amount);
     }
 
     public function test_admin_registration_list_accepts_a_page_size(): void
@@ -270,7 +280,7 @@ class RegistrationFlowTest extends HsnTestCase
             ->assertSee('Aktifkan kembali')
             ->assertSee('Tetap di kotak semula')
             ->assertSee('Kotak 4')
-            ->assertDontSee('Kotak 1');
+            ->assertSee('Kotak 1');
 
         $this->actingAs($admin)
             ->post(route('admin.registrations.restore', $registration))
@@ -301,13 +311,6 @@ class RegistrationFlowTest extends HsnTestCase
         app(\App\Services\ExpiryService::class)->releaseExpired();
 
         $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
-        $this->actingAs($admin)
-            ->from(route('admin.registrations.show', $registration))
-            ->post(route('admin.registrations.restore', $registration), ['area' => 1])
-            ->assertRedirect(route('admin.registrations.show', $registration))
-            ->assertSessionHasErrors('status');
-        $this->assertSame(RegistrationStatus::Expired, $registration->fresh()->status);
-
         $this->actingAs($admin)
             ->post(route('admin.registrations.restore', $registration), ['area' => 4])
             ->assertRedirect()

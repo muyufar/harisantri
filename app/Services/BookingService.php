@@ -279,14 +279,6 @@ class BookingService
                 throw new BookingException('Pendaftaran ini tidak punya slot.');
             }
 
-            if ($target) {
-                foreach ($registration->items as $item) {
-                    if ($item->size !== $target['size']) {
-                        throw new BookingException('Kotak tujuan ukurannya berbeda. Pindah hanya ke kotak dengan ukuran yang sama, supaya harga tidak berubah.');
-                    }
-                }
-            }
-
             $phone = Phone::normalize($registration->whatsapp);
             $this->lockPhone($phone);
             $max = $registration->event->config()->maxSlots();
@@ -321,12 +313,19 @@ class BookingService
                     throw new BookingException('Slot yang dipilih baru saja terisi. Coba aktifkan lagi.');
                 }
 
+                $price = $this->pricing->forBooth($booth, (bool) $item->with_tent);
                 $item->update([
                     'booth_id' => $booth->id,
                     'booth_code' => $booth->code,
                     'zone_name' => $booth->zone?->name ?? $item->zone_name,
+                    'size' => $booth->size,
+                    'place_price' => $price['place_price'],
+                    'tent_price' => $price['tent_price'],
+                    'line_total' => $price['line_total'],
                 ]);
             }
+
+            $this->syncTotals($registration);
 
             $registration->update([
                 'status' => RegistrationStatus::AwaitingPayment,
@@ -392,6 +391,22 @@ class BookingService
         ]))));
     }
 
+    private function syncTotals(Registration $registration): void
+    {
+        $items = $registration->items()->get();
+        $grand = (int) $items->sum('line_total');
+        $registration->update([
+            'subtotal' => (int) $items->sum('place_price'),
+            'tent_total' => (int) $items->sum('tent_price'),
+            'grand_total' => $grand,
+        ]);
+
+        $payment = $registration->payment()->first();
+        if ($payment && $payment->status !== PaymentStatus::Refunded) {
+            $payment->update(['amount' => $grand]);
+        }
+    }
+
     private function areaNumber(RegistrationItem $item): ?int
     {
         $code = $item->booth?->zone?->code;
@@ -433,10 +448,6 @@ class BookingService
                 throw new BookingException('Slot ini bukan bagian dari pendaftaran tersebut.');
             }
 
-            if ($item->size !== $area['size']) {
-                throw new BookingException('Kotak tujuan ukurannya berbeda. Pindah hanya ke kotak dengan ukuran yang sama, supaya harga tidak berubah.');
-            }
-
             $current = (int) ($item->booth?->zone?->code ?? 0);
             if ($current === $areaNumber) {
                 throw new BookingException('Pendaftar sudah berada di kotak ini.');
@@ -457,11 +468,17 @@ class BookingService
                 throw new BookingException('Slot di kotak tujuan baru saja terisi. Pilih kotak lain.');
             }
 
+            $price = $this->pricing->forBooth($booth, (bool) $item->with_tent);
             $item->update([
                 'booth_id' => $booth->id,
                 'booth_code' => $booth->code,
                 'zone_name' => $booth->zone?->name ?? $area['name'],
+                'size' => $booth->size,
+                'place_price' => $price['place_price'],
+                'tent_price' => $price['tent_price'],
+                'line_total' => $price['line_total'],
             ]);
+            $this->syncTotals($registration);
 
             $this->audit->log('registration.relocated', $registration, [
                 'code' => $registration->code,

@@ -26,13 +26,13 @@
                 <div class="mb-3 border-b border-slate-100 pb-3 last:border-0">
                     <p>{{ $item->zone_name }} · slot {{ $item->booth_code }} · {{ $item->sizeLabel() }} · {{ $item->with_tent ? 'pakai tenda' : 'tanpa tenda' }} · {{ rupiah($item->line_total) }}</p>
                     @if (auth()->user()->canPermission('registrations.manage') && in_array($registration->status, [\App\Enums\RegistrationStatus::AwaitingPayment, \App\Enums\RegistrationStatus::AwaitingVerification, \App\Enums\RegistrationStatus::PaymentRejected, \App\Enums\RegistrationStatus::Confirmed], true))
-                        <form method="POST" action="{{ route('admin.registrations.move', $registration) }}" class="mt-2 flex flex-wrap items-center gap-2" onsubmit="return confirm('Pindahkan lapak ke kotak yang dipilih? Harga tidak berubah.')">
+                        <form method="POST" action="{{ route('admin.registrations.move', $registration) }}" class="mt-2 flex flex-wrap items-center gap-2" onsubmit="return confirm('Pindahkan lapak ke kotak yang dipilih? Harga mengikuti ukuran kotak baru.')">
                             @csrf
                             <input type="hidden" name="item_id" value="{{ $item->id }}">
                             <select class="rounded-xl border border-slate-200 px-3 py-2" name="area" required>
                                 <option value="">Pindah ke kotak</option>
                                 @foreach (\App\Support\TentLayout::areas() as $number => $area)
-                                    @continue($area['size'] !== $item->size || (int) ($item->booth?->zone?->code ?? 0) === $number)
+                                    @continue((int) ($item->booth?->zone?->code ?? 0) === $number)
                                     <option value="{{ $number }}">{{ $area['name'] }} · {{ $area['size'] === '3x3' ? '3 × 3 meter' : '2 × 2 meter' }}</option>
                                 @endforeach
                             </select>
@@ -75,18 +75,16 @@
     @if (auth()->user()->canPermission('registrations.manage') && $registration->status === \App\Enums\RegistrationStatus::Expired)
         <form method="POST" action="{{ route('admin.registrations.restore', $registration) }}" class="mt-4 space-y-2 rounded-2xl bg-white p-4" onsubmit="return confirm('Aktifkan kembali pendaftaran ini? Slot ditahan ulang dan pendaftar bisa bayar lagi.')">
             @csrf
-            @php($restoreSize = $registration->items->pluck('size')->unique()->count() === 1 ? $registration->items->first()->size : null)
             <label class="block text-sm">
                 <span class="mb-1 block font-medium">Kotak tujuan</span>
                 <select class="w-full rounded-xl border border-slate-200 px-3 py-2" name="area">
                     <option value="">Tetap di kotak semula</option>
                     @foreach (\App\Support\TentLayout::areas() as $number => $area)
-                        @continue($restoreSize && $area['size'] !== $restoreSize)
                         <option value="{{ $number }}">{{ $area['name'] }} · {{ $area['size'] === '3x3' ? '3 × 3 meter' : '2 × 2 meter' }}</option>
                     @endforeach
                 </select>
             </label>
-            <p class="text-sm text-slate-600">Kalau kotak semula penuh, pilih kotak lain dengan ukuran yang sama. Harga dan pilihan tenda tidak berubah.</p>
+            <p class="text-sm text-slate-600">Boleh pindah ke kotak ukuran lain. Harga mengikuti ukuran kotak yang dipilih. Pilihan tenda tidak berubah.</p>
             <button class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white">Aktifkan kembali</button>
         </form>
     @endif
