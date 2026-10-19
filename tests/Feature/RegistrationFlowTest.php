@@ -378,6 +378,20 @@ class RegistrationFlowTest extends HsnTestCase
         $this->assertSame(RegistrationStatus::Expired, $expired->fresh()->status);
     }
 
+    public function test_admin_dashboard_groups_the_summary(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Lapak UMKM')
+            ->assertSee('Pembayaran')
+            ->assertSee('Pemasukan diterima')
+            ->assertSee('Pemakaian tenda panitia')
+            ->assertSee('Kotak 1');
+    }
+
     public function test_payment_page_shows_qris_instead_of_bank_transfer(): void
     {
         $booth = Booth::query()->where('type', 'umkm')->firstOrFail();

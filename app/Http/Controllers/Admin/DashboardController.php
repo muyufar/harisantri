@@ -25,10 +25,24 @@ class DashboardController extends AdminController
             RegistrationStatus::PaymentRejected->value,
             RegistrationStatus::Confirmed->value,
         ];
+        $byStatus = [];
+        foreach (RegistrationStatus::cases() as $status) {
+            $byStatus[$status->value] = 0;
+        }
+        $statusRows = (clone $base)
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->get();
+        foreach ($statusRows as $row) {
+            $key = $row->status instanceof RegistrationStatus ? $row->status->value : (string) $row->status;
+            $byStatus[$key] = (int) $row->aggregate;
+        }
 
         return view('admin.dashboard', [
             'event' => $event,
             'stats' => $stats,
+            'areas' => $maps->areaCards($event),
+            'byStatus' => $byStatus,
             'registrations' => (clone $base)->count(),
             'sponsorships' => SponsorshipRequest::query()->where('event_id', $event->id)->count(),
             'pendingPayments' => (clone $base)->where('status', RegistrationStatus::AwaitingVerification)->count(),
