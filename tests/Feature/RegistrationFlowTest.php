@@ -388,8 +388,9 @@ class RegistrationFlowTest extends HsnTestCase
             ->assertSee('Lapak UMKM')
             ->assertSee('Pembayaran')
             ->assertSee('Pemasukan diterima')
-            ->assertSee('Pemakaian tenda panitia')
-            ->assertSee('Kotak 1');
+            ->assertSee('tenda panitia')
+            ->assertSee('Kotak 1')
+            ->assertSee('Sisa');
     }
 
     public function test_payment_page_shows_qris_instead_of_bank_transfer(): void
