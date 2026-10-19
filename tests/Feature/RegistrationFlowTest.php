@@ -123,6 +123,41 @@ class RegistrationFlowTest extends HsnTestCase
             ->assertDontSee('Dua Slot Satu Kotak');
     }
 
+    public function test_admin_can_move_a_booth_to_another_box_of_the_same_size(): void
+    {
+        $booth = Booth::query()->whereHas('zone', fn ($query) => $query->where('code', '2'))->firstOrFail();
+        $registration = app(\App\Services\BookingService::class)->create(Event(), $this->applicant('081266600002', 'Pindah Kotak'), [
+            ['booth_id' => $booth->id, 'with_tent' => false],
+        ]);
+        $item = $registration->items()->firstOrFail();
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('admin.registrations.move', $registration), [
+                'item_id' => $item->id,
+                'area' => 3,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $item->refresh()->load('booth.zone');
+        $this->assertSame('3', (string) $item->booth->zone->code);
+        $this->assertSame('Kotak 3', $item->zone_name);
+        $this->assertSame(100000, $registration->fresh()->grand_total);
+        $this->assertNotNull($item->booth->reservation);
+
+        $this->actingAs($admin)
+            ->from(route('admin.registrations.show', $registration))
+            ->post(route('admin.registrations.move', $registration), [
+                'item_id' => $item->id,
+                'area' => 1,
+            ])
+            ->assertRedirect(route('admin.registrations.show', $registration))
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame('3', (string) $item->fresh()->load('booth.zone')->booth->zone->code);
+    }
+
     public function test_admin_registration_list_accepts_a_page_size(): void
     {
         $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();

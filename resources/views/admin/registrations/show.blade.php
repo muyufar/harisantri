@@ -23,7 +23,23 @@
         </article>
         <article class="rounded-2xl bg-white p-4 text-sm">
             @foreach ($registration->items as $item)
-                <p class="mb-2">{{ $item->zone_name }} · slot {{ $item->booth_code }} · {{ $item->sizeLabel() }} · {{ $item->with_tent ? 'pakai tenda' : 'tanpa tenda' }} · {{ rupiah($item->line_total) }}</p>
+                <div class="mb-3 border-b border-slate-100 pb-3 last:border-0">
+                    <p>{{ $item->zone_name }} · slot {{ $item->booth_code }} · {{ $item->sizeLabel() }} · {{ $item->with_tent ? 'pakai tenda' : 'tanpa tenda' }} · {{ rupiah($item->line_total) }}</p>
+                    @if (auth()->user()->canPermission('registrations.manage') && in_array($registration->status, [\App\Enums\RegistrationStatus::AwaitingPayment, \App\Enums\RegistrationStatus::AwaitingVerification, \App\Enums\RegistrationStatus::PaymentRejected, \App\Enums\RegistrationStatus::Confirmed], true))
+                        <form method="POST" action="{{ route('admin.registrations.move', $registration) }}" class="mt-2 flex flex-wrap items-center gap-2" onsubmit="return confirm('Pindahkan lapak ke kotak yang dipilih? Harga tidak berubah.')">
+                            @csrf
+                            <input type="hidden" name="item_id" value="{{ $item->id }}">
+                            <select class="rounded-xl border border-slate-200 px-3 py-2" name="area" required>
+                                <option value="">Pindah ke kotak</option>
+                                @foreach (\App\Support\TentLayout::areas() as $number => $area)
+                                    @continue($area['size'] !== $item->size || (int) ($item->booth?->zone?->code ?? 0) === $number)
+                                    <option value="{{ $number }}">{{ $area['name'] }} · {{ $area['size'] === '3x3' ? '3 × 3 meter' : '2 × 2 meter' }}</option>
+                                @endforeach
+                            </select>
+                            <button class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white">Pindah kotak</button>
+                        </form>
+                    @endif
+                </div>
             @endforeach
             <p>Pembayaran: {{ $registration->payment?->status->label() }}</p>
             @if ($registration->payment?->submitted_at)

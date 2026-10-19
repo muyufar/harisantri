@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\RegistrationStatus;
 use App\Exceptions\BookingException;
 use App\Models\Registration;
+use App\Services\BookingService;
 use App\Services\PaymentService;
 use App\Support\Phone;
 use App\Support\TentLayout;
@@ -55,7 +56,7 @@ class RegistrationController extends AdminController
     public function show(Registration $registration)
     {
         abort_unless($registration->event_id === $this->event()->id, 404);
-        $registration->load(['applicant', 'items.booth', 'payment.verifications.user', 'event']);
+        $registration->load(['applicant', 'items.booth.zone', 'payment.verifications.user', 'event']);
 
         return view('admin.registrations.show', ['registration' => $registration]);
     }
@@ -74,6 +75,23 @@ class RegistrationController extends AdminController
         return $this->decide($registration, function () use ($registration, $payments, $data) {
             $payments->reject($registration, request()->user(), $data['reason']);
         }, 'Pembayaran ditolak. Pendaftar dapat mengunggah ulang bukti.');
+    }
+
+    public function move(Request $request, Registration $registration, BookingService $booking)
+    {
+        $data = $request->validate([
+            'item_id' => ['required', 'integer'],
+            'area' => ['required', 'integer', 'between:1,8'],
+        ]);
+
+        $item = $registration->items()->whereKey($data['item_id'])->first();
+        if (! $item) {
+            return back()->withErrors(['area' => 'Slot yang dipilih tidak ditemukan.']);
+        }
+
+        return $this->decide($registration, function () use ($registration, $booking, $item, $data) {
+            $booking->relocate($registration, $item, (int) $data['area']);
+        }, 'Lapak dipindah ke '.TentLayout::area((int) $data['area'])['name'].'. Harga tidak berubah.');
     }
 
     public function cancel(Request $request, Registration $registration, PaymentService $payments)

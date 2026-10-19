@@ -14,6 +14,7 @@ use App\Models\PhoneLock;
 use App\Models\Registration;
 use App\Models\RegistrationItem;
 use App\Support\Phone;
+use App\Support\TentLayout;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
@@ -254,6 +255,72 @@ class BookingService
         }
 
         return array_values($normalized);
+    }
+
+    public function relocate(Registration $registration, RegistrationItem $item, int $areaNumber): Registration
+    {
+        $area = TentLayout::area($areaNumber);
+        if (! $area) {
+            throw new BookingException('Nomor kotak tidak valid.');
+        }
+
+        return DB::transaction(function () use ($registration, $item, $areaNumber, $area) {
+            $registration = Registration::query()->with('event')->lockForUpdate()->findOrFail($registration->id);
+
+            if (! in_array($registration->status, [
+                RegistrationStatus::AwaitingPayment,
+                RegistrationStatus::AwaitingVerification,
+                RegistrationStatus::PaymentRejected,
+                RegistrationStatus::Confirmed,
+            ], true)) {
+                throw new BookingException('Pendaftaran yang sudah tidak aktif tidak bisa dipindah.');
+            }
+
+            $item = RegistrationItem::query()->lockForUpdate()->findOrFail($item->id);
+            $item->load(['reservation', 'booth.zone']);
+            if ($item->registration_id !== $registration->id) {
+                throw new BookingException('Slot ini bukan bagian dari pendaftaran tersebut.');
+            }
+
+            if ($item->size !== $area['size']) {
+                throw new BookingException('Kotak tujuan ukurannya berbeda. Pindah hanya ke kotak dengan ukuran yang sama, supaya harga tidak berubah.');
+            }
+
+            $current = (int) ($item->booth?->zone?->code ?? 0);
+            if ($current === $areaNumber) {
+                throw new BookingException('Pendaftar sudah berada di kotak ini.');
+            }
+
+            $booth = app(BoothMapService::class)->allocateBooth($registration->event, $areaNumber, array_filter([$item->booth_id]));
+            $expiresAt = $item->reservation?->expires_at;
+            $from = $item->zone_name;
+            $item->reservation?->delete();
+
+            try {
+                BoothReservation::create([
+                    'booth_id' => $booth->id,
+                    'registration_item_id' => $item->id,
+                    'expires_at' => $expiresAt,
+                ]);
+            } catch (UniqueConstraintViolationException) {
+                throw new BookingException('Slot di kotak tujuan baru saja terisi. Pilih kotak lain.');
+            }
+
+            $item->update([
+                'booth_id' => $booth->id,
+                'booth_code' => $booth->code,
+                'zone_name' => $booth->zone?->name ?? $area['name'],
+            ]);
+
+            $this->audit->log('registration.relocated', $registration, [
+                'code' => $registration->code,
+                'from' => $from,
+                'to' => $area['name'],
+                'slot' => $booth->code,
+            ]);
+
+            return $registration->fresh(['items']);
+        });
     }
 
     private function lockPhone(string $phone): void
