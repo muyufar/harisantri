@@ -23,7 +23,56 @@
     <h1 class="text-2xl font-bold">Ringkasan</h1>
     <p class="mt-1 text-sm text-slate-500">{{ $event->name }}@if ($event->starts_at) · {{ $event->starts_at->timezone('Asia/Jakarta')->format('d/m/Y') }}@endif</p>
 
-    <section class="mt-5 rounded-3xl bg-white p-5">
+    <section class="mt-5 grid gap-4 lg:grid-cols-2">
+        <article class="rounded-3xl bg-white p-5">
+            <h2 class="text-lg font-bold">Pembayaran</h2>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                <div class="rounded-2xl bg-nu-soft px-4 py-3">
+                    <p class="text-sm text-nu-dark">Pemasukan diterima</p>
+                    <p class="mt-1 text-2xl font-bold text-nu-dark">{{ rupiah($income) }}</p>
+                </div>
+                <div class="rounded-2xl bg-gold-soft px-4 py-3">
+                    <p class="text-sm text-nu-dark">Belum lunas</p>
+                    <p class="mt-1 text-2xl font-bold text-nu-dark">{{ rupiah($outstanding) }}</p>
+                </div>
+            </div>
+            <div class="mt-4 flex h-3 overflow-hidden rounded-full bg-gold" role="img" aria-label="Perbandingan pemasukan dan tagihan belum lunas">
+                <div class="bg-nu" style="flex: {{ $income }} 1 0"></div>
+                <div style="flex: {{ max(0, $outstanding) }} 1 0"></div>
+            </div>
+            <p class="mt-2 text-sm text-slate-500">{{ $pendingPayments }} pendaftaran menunggu verifikasi bukti.</p>
+        </article>
+
+        <article class="rounded-3xl bg-white p-5">
+            <div class="flex items-baseline justify-between gap-3">
+                <h2 class="text-lg font-bold">Pendaftaran</h2>
+                <p class="text-sm text-slate-500">{{ $registrations }} UMKM · {{ $sponsorships }} sponsor</p>
+            </div>
+            <div class="mt-4 space-y-3">
+                @foreach ($statusOrder as $status)
+                    @php
+                        $count = $byStatus[$status->value] ?? 0;
+                    @endphp
+                    <div>
+                        <div class="flex items-center justify-between gap-3 text-sm">
+                            @if (auth()->user()->canPermission('registrations.view'))
+                                <a class="font-medium text-nu" href="{{ route('admin.registrations.index', ['status' => $status->value]) }}">{{ $status->label() }}</a>
+                            @else
+                                <span class="font-medium">{{ $status->label() }}</span>
+                            @endif
+                            <span class="font-semibold">{{ $count }}</span>
+                        </div>
+                        <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                            <div class="h-full {{ $status === \App\Enums\RegistrationStatus::AwaitingVerification && $count > 0 ? 'bg-gold' : 'bg-nu' }}" style="width: {{ (int) round($count / $statusMax * 100) }}%"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <p class="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm">Pemakaian tenda panitia: <span class="font-semibold">{{ $tents }} slot</span></p>
+        </article>
+    </section>
+
+    <section class="mt-4 rounded-3xl bg-white p-5">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <h2 class="text-lg font-bold">Lapak UMKM</h2>
@@ -53,8 +102,11 @@
                 </div>
             @endforeach
         </div>
+    </section>
 
-        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="mt-4 rounded-3xl bg-white p-5">
+        <h2 class="text-lg font-bold">Kotak</h2>
+        <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             @foreach ($areas as $area)
                 @php
                     $areaTotal = (int) $area['total'];
@@ -85,52 +137,5 @@
                 </article>
             @endforeach
         </div>
-    </section>
-
-    <section class="mt-4 grid gap-4 lg:grid-cols-2">
-        <article class="rounded-3xl bg-white p-5">
-            <h2 class="text-lg font-bold">Pembayaran</h2>
-            <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                <div class="rounded-2xl bg-nu-soft px-4 py-3">
-                    <p class="text-sm text-nu-dark">Pemasukan diterima</p>
-                    <p class="mt-1 text-2xl font-bold text-nu-dark">{{ rupiah($income) }}</p>
-                </div>
-                <div class="rounded-2xl bg-gold-soft px-4 py-3">
-                    <p class="text-sm text-nu-dark">Belum lunas</p>
-                    <p class="mt-1 text-2xl font-bold text-nu-dark">{{ rupiah($outstanding) }}</p>
-                </div>
-            </div>
-            <div class="mt-4 flex h-3 overflow-hidden rounded-full bg-gold" role="img" aria-label="Perbandingan pemasukan dan tagihan belum lunas">
-                <div class="bg-nu" style="flex: {{ $income }} 1 0"></div>
-                <div style="flex: {{ max(0, $outstanding) }} 1 0"></div>
-            </div>
-            <p class="mt-2 text-sm text-slate-500">{{ $pendingPayments }} pendaftaran menunggu verifikasi bukti.</p>
-        </article>
-
-        <article class="rounded-3xl bg-white p-5">
-            <div class="flex items-baseline justify-between gap-3">
-                <h2 class="text-lg font-bold">Pendaftaran</h2>
-                <p class="text-sm text-slate-500">{{ $registrations }} UMKM · {{ $sponsorships }} sponsor</p>
-            </div>
-            <div class="mt-4 space-y-3">
-                @foreach ($statusOrder as $status)
-                    @php($count = $byStatus[$status->value] ?? 0)
-                    <div>
-                        <div class="flex items-center justify-between gap-3 text-sm">
-                            @if (auth()->user()->canPermission('registrations.view'))
-                                <a class="font-medium text-nu" href="{{ route('admin.registrations.index', ['status' => $status->value]) }}">{{ $status->label() }}</a>
-                            @else
-                                <span class="font-medium">{{ $status->label() }}</span>
-                            @endif
-                            <span class="font-semibold">{{ $count }}</span>
-                        </div>
-                        <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                            <div class="h-full {{ $status === \App\Enums\RegistrationStatus::AwaitingVerification && $count > 0 ? 'bg-gold' : 'bg-nu' }}" style="width: {{ (int) round($count / $statusMax * 100) }}%"></div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-            <p class="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm">Pemakaian tenda panitia: <span class="font-semibold">{{ $tents }} slot</span></p>
-        </article>
     </section>
 @endsection
