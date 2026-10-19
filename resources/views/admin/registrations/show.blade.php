@@ -75,7 +75,18 @@
     @if (auth()->user()->canPermission('registrations.manage') && $registration->status === \App\Enums\RegistrationStatus::Expired)
         <form method="POST" action="{{ route('admin.registrations.restore', $registration) }}" class="mt-4 space-y-2 rounded-2xl bg-white p-4" onsubmit="return confirm('Aktifkan kembali pendaftaran ini? Slot ditahan ulang dan pendaftar bisa bayar lagi.')">
             @csrf
-            <p class="text-sm text-slate-600">Slot semula ditahan lagi kalau masih kosong. Kalau sudah terisi, sistem mengambil slot kosong lain di kotak yang sama. Harga tidak berubah.</p>
+            @php($restoreSize = $registration->items->pluck('size')->unique()->count() === 1 ? $registration->items->first()->size : null)
+            <label class="block text-sm">
+                <span class="mb-1 block font-medium">Kotak tujuan</span>
+                <select class="w-full rounded-xl border border-slate-200 px-3 py-2" name="area">
+                    <option value="">Tetap di kotak semula</option>
+                    @foreach (\App\Support\TentLayout::areas() as $number => $area)
+                        @continue($restoreSize && $area['size'] !== $restoreSize)
+                        <option value="{{ $number }}">{{ $area['name'] }} · {{ $area['size'] === '3x3' ? '3 × 3 meter' : '2 × 2 meter' }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <p class="text-sm text-slate-600">Kalau kotak semula penuh, pilih kotak lain dengan ukuran yang sama. Harga dan pilihan tenda tidak berubah.</p>
             <button class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white">Aktifkan kembali</button>
         </form>
     @endif

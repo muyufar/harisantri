@@ -96,13 +96,18 @@ class RegistrationController extends AdminController
         }, 'Lapak dipindah ke '.TentLayout::area((int) $data['area'])['name'].'. Harga tidak berubah.');
     }
 
-    public function restore(Registration $registration, BookingService $booking)
+    public function restore(Request $request, Registration $registration, BookingService $booking)
     {
+        $data = $request->validate([
+            'area' => ['nullable', 'integer', 'between:1,8'],
+        ]);
         $until = now()->addHours($this->event()->config()->holdHours())->timezone('Asia/Jakarta')->format('d/m/Y H.i');
+        $area = TentLayout::area((int) ($data['area'] ?? 0));
+        $place = $area ? ' di '.$area['name'] : '';
 
-        return $this->decide($registration, function () use ($registration, $booking) {
-            $booking->restore($registration);
-        }, 'Pendaftaran diaktifkan kembali sampai '.$until.' WIB. Pendaftar bisa mengunggah bukti lewat cek status. Harga tidak berubah.');
+        return $this->decide($registration, function () use ($registration, $booking, $data) {
+            $booking->restore($registration, isset($data['area']) ? (int) $data['area'] : null);
+        }, 'Pendaftaran diaktifkan kembali'.$place.' sampai '.$until.' WIB. Pendaftar bisa mengunggah bukti lewat cek status. Harga tidak berubah.');
     }
 
     public function cancel(Request $request, Registration $registration, PaymentService $payments)

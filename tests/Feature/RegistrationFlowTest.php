@@ -267,7 +267,10 @@ class RegistrationFlowTest extends HsnTestCase
         $this->actingAs($admin)
             ->get(route('admin.registrations.show', $registration))
             ->assertOk()
-            ->assertSee('Aktifkan kembali');
+            ->assertSee('Aktifkan kembali')
+            ->assertSee('Tetap di kotak semula')
+            ->assertSee('Kotak 4')
+            ->assertDontSee('Kotak 1');
 
         $this->actingAs($admin)
             ->post(route('admin.registrations.restore', $registration))
@@ -283,6 +286,39 @@ class RegistrationFlowTest extends HsnTestCase
         $this->assertTrue($item->with_tent);
         $this->assertSame(PaymentStatus::Pending, $registration->payment->status);
         $this->assertNotNull($item->booth->reservation);
+    }
+
+    public function test_admin_can_restore_an_expired_registration_into_another_box(): void
+    {
+        $booths = Booth::query()->whereHas('zone', fn ($query) => $query->where('code', '3'))->orderBy('code')->limit(2)->get();
+        $registration = app(\App\Services\BookingService::class)->create(Event(), $this->applicant('081288800009', 'Pindah Saat Aktifkan'), [
+            ['booth_id' => $booths[0]->id, 'with_tent' => true],
+            ['booth_id' => $booths[1]->id, 'with_tent' => true],
+        ]);
+        $total = $registration->grand_total;
+
+        $this->travel(3)->hours();
+        app(\App\Services\ExpiryService::class)->releaseExpired();
+
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+        $this->actingAs($admin)
+            ->from(route('admin.registrations.show', $registration))
+            ->post(route('admin.registrations.restore', $registration), ['area' => 1])
+            ->assertRedirect(route('admin.registrations.show', $registration))
+            ->assertSessionHasErrors('status');
+        $this->assertSame(RegistrationStatus::Expired, $registration->fresh()->status);
+
+        $this->actingAs($admin)
+            ->post(route('admin.registrations.restore', $registration), ['area' => 4])
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $items = $registration->fresh()->items()->with('booth.zone')->get();
+        $this->assertCount(2, $items);
+        $this->assertEquals(['4', '4'], $items->map(fn ($item) => (string) $item->booth->zone->code)->all());
+        $this->assertCount(2, $items->pluck('booth_id')->unique());
+        $this->assertTrue($items->every(fn ($item) => $item->with_tent));
+        $this->assertSame($total, $registration->fresh()->grand_total);
     }
 
     public function test_restoring_moves_to_another_slot_in_the_same_box_when_the_old_one_is_taken(): void
