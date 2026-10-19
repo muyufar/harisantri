@@ -4,6 +4,12 @@
     <h1 class="text-2xl font-bold">Pendaftar UMKM</h1>
     <form class="mt-4 flex flex-col gap-2 sm:flex-row" method="GET">
         <input class="flex-1 rounded-xl border border-slate-200 px-3 py-2" name="q" value="{{ request('q') }}" placeholder="Nama, NIK, WhatsApp, lapak, atau kode">
+        <select class="rounded-xl border border-slate-200 px-3 py-2" name="kotak" onchange="this.form.requestSubmit()">
+            <option value="">Semua kotak</option>
+            @foreach ($areas as $number => $area)
+                <option value="{{ $number }}" @selected((int) request('kotak') === $number)>{{ $area['name'] }}</option>
+            @endforeach
+        </select>
         <select class="rounded-xl border border-slate-200 px-3 py-2" name="status">
             <option value="">Semua status</option>
             @foreach ($statuses as $status)

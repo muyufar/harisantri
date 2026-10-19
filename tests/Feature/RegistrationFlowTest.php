@@ -110,6 +110,17 @@ class RegistrationFlowTest extends HsnTestCase
         $this->assertEquals(['2', '2'], $items->map(fn ($item) => (string) $item->booth->zone->code)->all());
         $this->assertCount(2, $items->pluck('booth_id')->unique());
         $this->assertSame(200000, $registration->grand_total);
+
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.index', ['kotak' => 2]))
+            ->assertOk()
+            ->assertSee('Dua Slot Satu Kotak')
+            ->assertSee('value="2" selected', false);
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.index', ['kotak' => 1]))
+            ->assertOk()
+            ->assertDontSee('Dua Slot Satu Kotak');
     }
 
     public function test_admin_registration_list_accepts_a_page_size(): void

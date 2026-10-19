@@ -7,6 +7,7 @@ use App\Exceptions\BookingException;
 use App\Models\Registration;
 use App\Services\PaymentService;
 use App\Support\Phone;
+use App\Support\TentLayout;
 use Illuminate\Http\Request;
 
 class RegistrationController extends AdminController
@@ -20,11 +21,14 @@ class RegistrationController extends AdminController
         }
         $term = trim($request->string('q')->toString());
         $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%';
+        $kotak = (int) $request->integer('kotak');
+        $area = TentLayout::area($kotak);
 
         $registrations = Registration::query()
             ->with(['applicant', 'items', 'payment'])
             ->where('event_id', $event->id)
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
+            ->when($area, fn ($query) => $query->whereHas('items', fn ($items) => $items->where('zone_name', $area['name'])))
             ->when($term !== '', function ($query) use ($like, $term) {
                 $digits = Phone::digits($term);
                 $query->where(function ($query) use ($like, $digits) {
@@ -44,6 +48,7 @@ class RegistrationController extends AdminController
         return view('admin.registrations.index', [
             'registrations' => $registrations,
             'statuses' => RegistrationStatus::cases(),
+            'areas' => TentLayout::areas(),
         ]);
     }
 
