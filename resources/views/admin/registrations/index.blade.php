@@ -10,6 +10,11 @@
                 <option value="{{ $number }}" @selected((int) request('kotak') === $number)>{{ $area['name'] }}</option>
             @endforeach
         </select>
+        <select class="rounded-xl border border-slate-200 px-3 py-2" name="tenda" onchange="this.form.requestSubmit()">
+            <option value="">Semua tenda</option>
+            <option value="1" @selected(request('tenda') === '1')>Pakai tenda</option>
+            <option value="0" @selected(request('tenda') === '0')>Tanpa tenda</option>
+        </select>
         <select class="rounded-xl border border-slate-200 px-3 py-2" name="status">
             <option value="">Semua status</option>
             @foreach ($statuses as $status)

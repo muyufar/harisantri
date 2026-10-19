@@ -24,12 +24,14 @@ class RegistrationController extends AdminController
         $like = '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%';
         $kotak = (int) $request->integer('kotak');
         $area = TentLayout::area($kotak);
+        $tenda = $request->string('tenda')->toString();
 
         $registrations = Registration::query()
             ->with(['applicant', 'items', 'payment'])
             ->where('event_id', $event->id)
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
             ->when($area, fn ($query) => $query->whereHas('items', fn ($items) => $items->where('zone_name', $area['name'])))
+            ->when(in_array($tenda, ['0', '1'], true), fn ($query) => $query->whereHas('items', fn ($items) => $items->where('with_tent', $tenda === '1')))
             ->when($term !== '', function ($query) use ($like, $term) {
                 $digits = Phone::digits($term);
                 $query->where(function ($query) use ($like, $digits) {
