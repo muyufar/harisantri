@@ -33,11 +33,12 @@
     </form>
     <div class="mt-4 overflow-x-auto rounded-2xl bg-white">
         <table class="min-w-full text-left text-sm">
-            <thead class="text-slate-500"><tr><th class="p-3">Kode</th><th>Usaha</th><th>Lapak</th><th>Total</th><th>Status</th><th>Bukti diunggah</th></tr></thead>
+            <thead class="text-slate-500"><tr><th class="p-3">No</th><th>Kode</th><th>Usaha</th><th>Lapak</th><th>Total</th><th>Status</th><th>Bukti diunggah</th></tr></thead>
             <tbody>
                 @forelse ($registrations as $registration)
                     <tr class="border-t border-slate-100">
-                        <td class="p-3"><a class="font-semibold text-nu" href="{{ route('admin.registrations.show', $registration) }}">{{ $registration->code }}</a></td>
+                        <td class="p-3 text-slate-500">{{ $registrations->firstItem() + $loop->index }}</td>
+                        <td><a class="font-semibold text-nu" href="{{ route('admin.registrations.show', $registration) }}">{{ $registration->code }}</a></td>
                         <td>{{ $registration->applicant->business_name }}</td>
                         <td>{{ $registration->items->pluck('zone_name')->unique()->join(', ') }}</td>
                         <td>{{ rupiah($registration->grand_total) }}</td>
@@ -45,7 +46,7 @@
                         <td class="whitespace-nowrap">{{ $registration->payment?->submitted_at?->timezone('Asia/Jakarta')->format('d/m/Y H.i') ?? '—' }}</td>
                     </tr>
                 @empty
-                    <tr><td class="p-4 text-slate-500" colspan="6">Belum ada pendaftar.</td></tr>
+                    <tr><td class="p-4 text-slate-500" colspan="7">Belum ada pendaftar.</td></tr>
                 @endforelse
             </tbody>
         </table>
