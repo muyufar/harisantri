@@ -62,7 +62,6 @@ class AnnouncementController extends AdminController
             'event' => $event,
             'flyerUrl' => $flyerUrl,
             'recipients' => $recipients,
-            'intervalSeconds' => 8,
         ]);
     }
 }
