@@ -7,7 +7,7 @@
         <h1 class="text-3xl font-bold">Ajukan sponsorship</h1>
         <p class="mt-2 text-sm text-slate-600">Formulir ini tidak menghitung harga. Panitia akan menghubungi Anda, menyampaikan penawaran, lalu menentukan lokasi jika kerja sama disetujui.</p>
         @unless ($open)
-            <p class="mt-4 rounded-xl bg-gold-soft px-4 py-3 text-sm">Pengajuan sudah ditutup.</p>
+            <p class="mt-4 rounded-xl bg-gold-soft px-4 py-3 text-sm">{{ $event->config()->registrationClosedMessage() }}</p>
         @else
             <form method="POST" action="{{ route('sponsorship.store') }}" class="mt-6 space-y-4" x-data="formState" @submit="sending = true">
                 @csrf

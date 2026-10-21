@@ -33,8 +33,12 @@
                     <div class="rounded-2xl bg-white p-4"><dt class="text-slate-500">Tempat</dt><dd class="font-semibold">{{ $event->venue }}</dd></div>
                 </dl>
                 <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-                    <a href="{{ route('register.create') }}" class="rounded-xl bg-nu px-5 py-3 text-center font-semibold text-white">Daftar Lapak UMKM</a>
-                    <a href="{{ route('sponsorship.create') }}" class="rounded-xl border border-gold bg-gold-soft px-5 py-3 text-center font-semibold text-nu-dark">Ajukan Sponsorship</a>
+                    @if ($event->registrationIsOpen())
+                        <a href="{{ route('register.create') }}" class="rounded-xl bg-nu px-5 py-3 text-center font-semibold text-white">Daftar Lapak UMKM</a>
+                        <a href="{{ route('sponsorship.create') }}" class="rounded-xl border border-gold bg-gold-soft px-5 py-3 text-center font-semibold text-nu-dark">Ajukan Sponsorship</a>
+                    @else
+                        <p class="rounded-xl bg-gold-soft px-5 py-3 text-sm text-nu-dark">{{ $config->registrationClosedMessage() }}</p>
+                    @endif
                 </div>
             </div>
             <div class="rounded-3xl bg-nu-dark p-6 text-white" x-data="countdown('{{ $event->starts_at->toIso8601String() }}')">

@@ -71,7 +71,13 @@ class Event extends Model
 
     public function registrationIsOpen(): bool
     {
-        $closes = $this->config()->registrationClosesAt();
+        $config = $this->config();
+
+        if ($config->registrationPaused()) {
+            return false;
+        }
+
+        $closes = $config->registrationClosesAt();
 
         return $closes === null || now()->lt($closes);
     }

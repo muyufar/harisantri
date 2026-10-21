@@ -110,6 +110,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('permission:settings.manage')->group(function () {
             Route::get('/event', [SettingController::class, 'edit'])->name('settings.edit');
             Route::put('/event', [SettingController::class, 'update'])->name('settings.update');
+            Route::post('/event/pendaftaran', [SettingController::class, 'toggleRegistration'])->name('settings.registration');
         });
 
         Route::middleware('permission:users.manage')->group(function () {

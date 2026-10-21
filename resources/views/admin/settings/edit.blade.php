@@ -2,6 +2,36 @@
 
 @section('content')
     <h1 class="text-2xl font-bold">Informasi event</h1>
+
+    <div class="mt-4 rounded-2xl border {{ $config->registrationPaused() ? 'border-red-200 bg-red-50' : 'border-nu/20 bg-nu-soft' }} p-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <p class="font-semibold {{ $config->registrationPaused() ? 'text-red-800' : 'text-nu-dark' }}">
+                    Status pendaftaran:
+                    {{ $config->registrationPaused() ? 'Sementara ditutup' : ($event->registrationIsOpen() ? 'Terbuka' : 'Ditutup (jadwal)') }}
+                </p>
+                <p class="mt-1 text-sm text-slate-600">
+                    Tombol ini menutup/membuka pendaftaran UMKM &amp; sponsorship tanpa mengubah tanggal tutup otomatis.
+                    Pembayaran dan unggah bukti untuk yang sudah mendaftar tetap berjalan.
+                </p>
+            </div>
+            <form method="POST" action="{{ route('admin.settings.registration') }}" class="shrink-0">
+                @csrf
+                @if ($config->registrationPaused())
+                    <input type="hidden" name="pause" value="0">
+                    <button class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white" type="submit">Buka kembali</button>
+                @else
+                    <input type="hidden" name="pause" value="1">
+                    <label class="mb-2 block text-xs text-slate-600">
+                        Pesan (opsional)
+                        <input class="mt-1 w-full min-w-[14rem] rounded-xl border border-slate-200 px-3 py-2 text-sm" name="message" maxlength="500" placeholder="Mis. Slot sedang ditinjau panitia">
+                    </label>
+                    <button class="rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white" type="submit" onclick="return confirm('Tutup sementara pendaftaran publik?')">Tutup sementara</button>
+                @endif
+            </form>
+        </div>
+    </div>
+
     <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data" class="mt-4 grid gap-3 md:grid-cols-2">
         @csrf @method('PUT')
         <label class="text-sm">Nama<input class="mt-1 w-full rounded-xl border px-3 py-2" name="name" value="{{ $event->name }}"></label>

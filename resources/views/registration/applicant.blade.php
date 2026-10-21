@@ -7,7 +7,7 @@
         <p class="text-sm font-semibold text-nu">Langkah 1 dari 4</p>
         <h1 class="mt-2 text-3xl font-bold">Data pendaftar</h1>
         @unless ($open)
-            <p class="mt-4 rounded-xl bg-gold-soft px-4 py-3 text-sm">Pendaftaran sudah ditutup.</p>
+            <p class="mt-4 rounded-xl bg-gold-soft px-4 py-3 text-sm">{{ $event->config()->registrationClosedMessage() }}</p>
         @else
             <form method="POST" action="{{ route('register.applicant') }}" enctype="multipart/form-data" class="mt-6 space-y-4" x-data="{ preparing: false }" @submit="preparing && $event.preventDefault()">
                 @csrf

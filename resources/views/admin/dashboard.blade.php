@@ -22,10 +22,31 @@
         ];
     @endphp
 
-    <header class="mb-4">
-        <h1 class="text-2xl font-bold">Ringkasan</h1>
-        <p class="mt-1 text-sm text-slate-500">{{ $event->name }}@if ($event->starts_at) · {{ $event->starts_at->timezone('Asia/Jakarta')->format('d/m/Y') }}@endif</p>
+    <header class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold">Ringkasan</h1>
+            <p class="mt-1 text-sm text-slate-500">{{ $event->name }}@if ($event->starts_at) · {{ $event->starts_at->timezone('Asia/Jakarta')->format('d/m/Y') }}@endif</p>
+        </div>
+        @if (auth()->user()->canPermission('settings.manage'))
+            @php
+                $paused = $event->config()->registrationPaused();
+            @endphp
+            <form method="POST" action="{{ route('admin.settings.registration') }}" class="shrink-0">
+                @csrf
+                <input type="hidden" name="pause" value="{{ $paused ? '0' : '1' }}">
+                <button
+                    type="submit"
+                    class="rounded-xl px-4 py-2 text-sm font-semibold text-white {{ $paused ? 'bg-nu' : 'bg-red-700' }}"
+                    @if (! $paused) onclick="return confirm('Tutup sementara pendaftaran publik?')" @endif
+                >
+                    {{ $paused ? 'Buka pendaftaran' : 'Tutup sementara pendaftaran' }}
+                </button>
+            </form>
+        @endif
     </header>
+    @if (auth()->user()->canPermission('settings.manage') && $event->config()->registrationPaused())
+        <p class="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">Pendaftaran publik sementara ditutup. Pembayaran untuk yang sudah daftar tetap bisa dilanjutkan.</p>
+    @endif
 
     <div class="grid gap-4 lg:grid-cols-2">
         <section class="rounded-2xl bg-white p-4">

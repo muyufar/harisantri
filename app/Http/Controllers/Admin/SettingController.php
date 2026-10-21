@@ -114,4 +114,32 @@ class SettingController extends AdminController
 
         return back()->with('status', 'Informasi event disimpan.');
     }
+
+    public function toggleRegistration(Request $request, AuditLogger $audit)
+    {
+        $event = $this->event();
+        $pause = $request->boolean('pause');
+        $message = trim((string) $request->input('message', ''));
+
+        EventSetting::query()->updateOrCreate(
+            ['event_id' => $event->id, 'key' => 'registration_paused'],
+            ['value' => $pause ? '1' : '0']
+        );
+
+        if ($pause && $message !== '') {
+            EventSetting::query()->updateOrCreate(
+                ['event_id' => $event->id, 'key' => 'registration_paused_message'],
+                ['value' => mb_substr($message, 0, 500)]
+            );
+        }
+
+        $audit->log($pause ? 'registration.paused' : 'registration.resumed', $event, [
+            'paused' => $pause,
+        ]);
+
+        return back()->with(
+            'status',
+            $pause ? 'Pendaftaran sementara ditutup.' : 'Pendaftaran dibuka kembali.'
+        );
+    }
 }

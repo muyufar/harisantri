@@ -447,6 +447,41 @@ class RegistrationFlowTest extends HsnTestCase
             ->assertDontSee('Transfer manual')
             ->assertDontSee('Nomor rekening');
     }
+
+    public function test_admin_can_temporarily_pause_and_resume_registration(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+        $event = Event();
+
+        $this->assertTrue($event->registrationIsOpen());
+
+        $this->actingAs($admin)
+            ->post(route('admin.settings.registration'), [
+                'pause' => '1',
+                'message' => 'Slot sedang ditinjau panitia.',
+            ])
+            ->assertRedirect();
+
+        $event->unsetRelation('settings');
+        $this->assertFalse($event->fresh()->registrationIsOpen());
+
+        $this->get(route('register.create'))
+            ->assertOk()
+            ->assertSee('Slot sedang ditinjau panitia.')
+            ->assertDontSee('Nama lengkap penanggung jawab');
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('Slot sedang ditinjau panitia.')
+            ->assertDontSee('Daftar Lapak UMKM');
+
+        $this->actingAs($admin)
+            ->post(route('admin.settings.registration'), ['pause' => '0'])
+            ->assertRedirect();
+
+        $event->unsetRelation('settings');
+        $this->assertTrue($event->fresh()->registrationIsOpen());
+    }
 }
 
 function Event(): \App\Models\Event
