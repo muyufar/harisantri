@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\RegistrationStatus;
+use App\Models\AnnouncementSend;
 use App\Models\Registration;
 use App\Support\Phone;
+use Illuminate\Http\Request;
 
 class AnnouncementController extends AdminController
 {
@@ -12,6 +14,12 @@ class AnnouncementController extends AdminController
     {
         $event = $this->event();
         $flyerUrl = asset('images/pengumuman-jadwal-1-november-2026.jpg');
+        $key = AnnouncementSend::KEY_DATE_CHANGE_1_NOV_2026;
+
+        $sentAtByRegistration = AnnouncementSend::query()
+            ->where('event_id', $event->id)
+            ->where('key', $key)
+            ->pluck('sent_at', 'registration_id');
 
         $recipients = Registration::query()
             ->with('applicant')
@@ -26,7 +34,7 @@ class AnnouncementController extends AdminController
             ->latest('id')
             ->get()
             ->filter(fn (Registration $registration) => filled($registration->whatsapp) && Phone::normalize($registration->whatsapp) !== '')
-            ->map(function (Registration $registration) use ($flyerUrl) {
+            ->map(function (Registration $registration) use ($flyerUrl, $sentAtByRegistration) {
                 $name = $registration->applicant?->full_name ?: 'Bapak/Ibu';
                 $business = $registration->applicant?->business_name ?: '-';
                 $message = "Assalamu'alaikum warahmatullahi wabarakatuh.\n"
@@ -46,6 +54,8 @@ class AnnouncementController extends AdminController
                     ."Wassalamu'alaikum warahmatullahi wabarakatuh.\n"
                     .'— Panitia HSN 2026 PCNU Kabupaten Magelang';
 
+                $sentAt = $sentAtByRegistration->get($registration->id);
+
                 return [
                     'id' => $registration->id,
                     'code' => $registration->code,
@@ -54,14 +64,54 @@ class AnnouncementController extends AdminController
                     'status' => $registration->status->label(),
                     'whatsapp' => Phone::display($registration->whatsapp),
                     'url' => Phone::whatsappUrl($registration->whatsapp, $message),
+                    'sent' => $sentAt !== null,
+                    'sent_at' => $sentAt?->timezone('Asia/Jakarta')->format('d/m H:i'),
+                    'mark_url' => route('admin.announcements.mark', $registration),
                 ];
             })
+            ->sortBy([
+                fn (array $row) => $row['sent'] ? 1 : 0,
+                fn (array $row) => $row['id'] * -1,
+            ])
             ->values();
 
         return view('admin.announcements.date-change', [
             'event' => $event,
             'flyerUrl' => $flyerUrl,
             'recipients' => $recipients,
+        ]);
+    }
+
+    public function mark(Request $request, Registration $registration)
+    {
+        $event = $this->event();
+        abort_unless($registration->event_id === $event->id, 404);
+
+        $sent = $request->boolean('sent', true);
+        $key = AnnouncementSend::KEY_DATE_CHANGE_1_NOV_2026;
+
+        if ($sent) {
+            AnnouncementSend::query()->updateOrCreate(
+                [
+                    'registration_id' => $registration->id,
+                    'key' => $key,
+                ],
+                [
+                    'event_id' => $event->id,
+                    'sent_by' => $request->user()->id,
+                    'sent_at' => now(),
+                ]
+            );
+        } else {
+            AnnouncementSend::query()
+                ->where('registration_id', $registration->id)
+                ->where('key', $key)
+                ->delete();
+        }
+
+        return response()->json([
+            'sent' => $sent,
+            'sent_at' => $sent ? now()->timezone('Asia/Jakarta')->format('d/m H:i') : null,
         ]);
     }
 }
