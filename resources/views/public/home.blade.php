@@ -7,7 +7,21 @@
             <p class="mt-3 text-slate-600">Jalankan migrasi dan seeder agar data Hari Santri Nasional 2026 tersedia.</p>
         </section>
     @else
-        @php($config = $event->config())
+        @php
+            $config = $event->config();
+            $flyerUrl = asset('images/pengumuman-jadwal-1-november-2026.jpg');
+        @endphp
+        <section class="mx-auto max-w-6xl px-4 pt-8">
+            <aside class="flex flex-col gap-4 rounded-3xl border border-gold bg-gold-soft p-4 sm:flex-row sm:items-center">
+                <img class="mx-auto h-36 w-auto rounded-2xl border border-white object-cover sm:mx-0" src="{{ $flyerUrl }}" alt="Pemberitahuan perubahan jadwal Jalan Sehat">
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold uppercase tracking-wide text-nu">Pemberitahuan jadwal</p>
+                    <p class="mt-1 text-lg font-bold text-nu-dark">Jalan Sehat &amp; Bazar UMKM dipindah ke Minggu, 1 November 2026</p>
+                    <p class="mt-1 text-sm text-slate-700">Semula Sabtu 31 Oktober 2026. Waktu tetap 07.00 WIB, tempat tetap {{ $event->venue }}. Mohon maaf atas perubahan ini.</p>
+                    <a class="mt-2 inline-block text-sm font-semibold text-nu underline" href="{{ $flyerUrl }}" target="_blank">Lihat flyer pengumuman</a>
+                </div>
+            </aside>
+        </section>
         <section class="mx-auto grid max-w-6xl gap-8 px-4 py-12 md:grid-cols-[1.3fr_.7fr] md:items-center">
             <div>
                 <p class="text-sm font-semibold uppercase tracking-wide text-nu">{{ $event->organizer }}</p>

@@ -15,6 +15,7 @@
         $links = [
             ['admin.dashboard', 'Dashboard', 'dashboard.view'],
             ['admin.registrations.index', 'Pendaftar UMKM', 'registrations.view'],
+            ['admin.announcements.date-change', 'Pengumuman jadwal', 'registrations.manage'],
             ['admin.sponsorships.index', 'Sponsorship', 'sponsorships.manage'],
             ['admin.booths.index', 'Slot lapak', 'booths.manage'],
             ['admin.zones.index', 'Zona', 'booths.manage'],
@@ -73,5 +74,6 @@
             @yield('content')
         </section>
     </div>
+    @stack('scripts')
 </body>
 </html>

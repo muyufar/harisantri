@@ -18,9 +18,9 @@ class EventSeeder extends Seeder
             [
                 'name' => 'Hari Santri Nasional PCNU Kabupaten Magelang 2026',
                 'activity_name' => 'Jalan Sehat Santri & Bazar UMKM',
-                'starts_at' => '2026-10-31 07:00:00',
+                'starts_at' => '2026-11-01 07:00:00',
                 'ends_at' => null,
-                'venue' => 'Halaman MAJT Kabupaten Magelang',
+                'venue' => 'Halaman MAJT An-Nuur Kabupaten Magelang',
                 'organizer' => 'PCNU Kabupaten Magelang',
                 'timezone' => 'Asia/Jakarta',
                 'is_active' => true,
@@ -30,7 +30,7 @@ class EventSeeder extends Seeder
         $settings = [
             'tagline' => 'Pendaftaran Lapak UMKM & Sponsorship HSN 2026',
             'description' => 'PCNU Kabupaten Magelang membuka pendaftaran lapak UMKM dan pengajuan sponsorship untuk Jalan Sehat Santri dan Bazar UMKM pada Hari Santri Nasional 2026.',
-            'registration_closes_at' => '2026-10-28 23:59:00',
+            'registration_closes_at' => '2026-10-31 23:59:00',
             'hold_hours' => '2',
             'max_slots_per_applicant' => '3',
             'contact_name' => 'Panitia HSN PCNU Kabupaten Magelang',
