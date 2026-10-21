@@ -28,7 +28,7 @@ class UmkmRegistrationController extends Controller
     public function storeApplicant(StoreApplicantRequest $request)
     {
         $event = $this->event();
-        abort_unless($event->registrationIsOpen(), 403, 'Pendaftaran sudah ditutup.');
+        abort_unless($event->registrationIsOpen(), 403, $event->config()->registrationClosedMessage());
 
         $data = $request->safe()->except('logo');
         $data['whatsapp'] = Phone::normalize($data['whatsapp']);

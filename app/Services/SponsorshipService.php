@@ -25,7 +25,7 @@ class SponsorshipService
     public function submit(Event $event, array $data): SponsorshipRequest
     {
         if (! $event->registrationIsOpen()) {
-            throw new BookingException('Pengajuan sponsorship sudah ditutup.');
+            throw new BookingException($event->config()->registrationClosedMessage());
         }
 
         $request = SponsorshipRequest::create([

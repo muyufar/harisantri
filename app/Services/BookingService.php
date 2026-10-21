@@ -96,7 +96,7 @@ class BookingService
     public function create(Event $event, array $applicantData, array $selections): Registration
     {
         if (! $event->registrationIsOpen()) {
-            throw new BookingException('Pendaftaran sudah ditutup.');
+            throw new BookingException($event->config()->registrationClosedMessage());
         }
 
         app(ExpiryService::class)->releaseExpired();
