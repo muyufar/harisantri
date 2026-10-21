@@ -11,29 +11,34 @@ use Illuminate\Support\Collection;
 
 class BoothMapService
 {
-    /** @var array<int, Collection<int, array<string, mixed>>> */
+    /** @var array<string, Collection<int, array<string, mixed>>> */
     private array $presented = [];
 
     public function __construct(private PricingService $pricing) {}
 
-    public function models(Event $event): Collection
+    public function models(Event $event, bool $activeZonesOnly = true): Collection
     {
         return Booth::query()
             ->with(['zone', 'reservation.registrationItem.registration', 'reservation.sponsorshipRequest'])
             ->where('event_id', $event->id)
-            ->whereHas('zone', fn ($query) => $query->where('is_active', true))
+            ->when(
+                $activeZonesOnly,
+                fn ($query) => $query->whereHas('zone', fn ($zone) => $zone->where('is_active', true)),
+                fn ($query) => $query->whereHas('zone')
+            )
             ->orderBy('code')
             ->get();
     }
 
     /** @return Collection<int, array<string, mixed>> */
-    public function present(Event $event): Collection
+    public function present(Event $event, bool $activeZonesOnly = true): Collection
     {
-        if (isset($this->presented[$event->id])) {
-            return $this->presented[$event->id];
+        $cacheKey = $event->id.':'.($activeZonesOnly ? 'open' : 'all');
+        if (isset($this->presented[$cacheKey])) {
+            return $this->presented[$cacheKey];
         }
 
-        return $this->presented[$event->id] = $this->models($event)->map(function (Booth $booth) {
+        return $this->presented[$cacheKey] = $this->models($event, $activeZonesOnly)->map(function (Booth $booth) {
             $place = null;
             $tent = null;
 
@@ -64,6 +69,7 @@ class BoothMapService
                 'y' => $booth->pos_y,
                 'w' => $booth->width,
                 'h' => $booth->height,
+                'open' => (bool) $booth->zone?->is_active,
                 'status' => $booth->displayStatus(),
                 'status_label' => $booth->statusLabel(),
                 'place_price' => $place,
@@ -74,25 +80,36 @@ class BoothMapService
     }
 
     /** @return array<int, array<string, mixed>> */
-    public function areaCards(Event $event): array
+    public function areaCards(Event $event, bool $activeZonesOnly = false): array
     {
-        return $this->cardsFrom($event, $this->present($event));
+        return $this->cardsFrom($event, $this->present($event, $activeZonesOnly), $activeZonesOnly);
     }
 
     /** @param  Collection<int, array<string, mixed>>  $presented
      * @return array<int, array<string, mixed>>
      */
-    private function cardsFrom(Event $event, Collection $presented): array
+    private function cardsFrom(Event $event, Collection $presented, bool $activeZonesOnly = true): array
     {
         $booths = $presented->where('type', 'umkm');
+        $zoneOpen = BoothZone::query()
+            ->where('event_id', $event->id)
+            ->where('type', 'umkm')
+            ->pluck('is_active', 'code');
         $cards = [];
 
         foreach (TentLayout::areas() as $number => $area) {
+            $open = (bool) ($zoneOpen[(string) $number] ?? true);
+            if ($activeZonesOnly && ! $open) {
+                continue;
+            }
+
             $rows = $booths->where('area', $number);
-            $available = $rows->where('status', 'available')->count();
-            $status = $available > 0 ? 'available' : (
-                $rows->where('status', 'held')->isNotEmpty() ? 'held' : (
-                    $rows->where('status', 'occupied')->isNotEmpty() ? 'occupied' : 'blocked'
+            $available = $open ? $rows->where('status', 'available')->count() : 0;
+            $status = ! $open ? 'closed' : (
+                $available > 0 ? 'available' : (
+                    $rows->where('status', 'held')->isNotEmpty() ? 'held' : (
+                        $rows->where('status', 'occupied')->isNotEmpty() ? 'occupied' : 'blocked'
+                    )
                 )
             );
 
@@ -112,6 +129,7 @@ class BoothMapService
                 'y' => $area['y'],
                 'w' => $area['w'],
                 'h' => $area['h'],
+                'open' => $open,
                 'total' => $rows->count(),
                 'available' => $available,
                 'held' => $rows->where('status', 'held')->count(),
@@ -119,6 +137,7 @@ class BoothMapService
                 'blocked' => $rows->where('status', 'blocked')->count(),
                 'status' => $status,
                 'status_label' => match ($status) {
+                    'closed' => 'Ditutup sementara',
                     'available' => $available.' slot tersedia',
                     'held' => 'Sedang dipesan',
                     'occupied' => 'Penuh',
@@ -142,15 +161,19 @@ class BoothMapService
     /** @param  array<int, int>  $quantities */
     public function payload(Event $event, string $mode, array $selectedAreas = [], ?int $remaining = null, array $tentChoices = [], array $quantities = []): array
     {
-        $booths = $this->present($event);
+        $activeZonesOnly = $mode !== 'edit';
+        $booths = $this->present($event, $activeZonesOnly);
 
         return [
             'mode' => $mode,
             'floorplan' => $event->config()->floorplanUrl(),
             'max' => $remaining ?? $event->config()->maxSlots(),
-            'booths' => $mode === 'edit' ? $booths : [],
-            'areas' => $this->cardsFrom($event, $booths),
-            'zones' => $event->zones()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name', 'type', 'code']),
+            'booths' => $mode === 'edit' ? $this->present($event, false) : [],
+            'areas' => $this->cardsFrom($event, $mode === 'edit' ? $this->present($event, false) : $booths, $activeZonesOnly),
+            'zones' => $event->zones()
+                ->when($activeZonesOnly, fn ($query) => $query->where('is_active', true))
+                ->orderBy('sort_order')
+                ->get(['id', 'name', 'type', 'code', 'is_active']),
             'selected' => array_values(array_map('intval', $selectedAreas)),
             'quantities' => $quantities,
             'tentChoices' => $tentChoices,
@@ -160,9 +183,9 @@ class BoothMapService
         ];
     }
 
-    public function stats(Event $event): array
+    public function stats(Event $event, bool $activeZonesOnly = true): array
     {
-        $booths = $this->present($event);
+        $booths = $this->present($event, $activeZonesOnly);
         $umkm = $booths->where('type', 'umkm');
         $sponsor = $booths->where('type', 'sponsorship');
 
@@ -182,7 +205,7 @@ class BoothMapService
      *
      * @param  array<int, int>  $excludeBoothIds
      */
-    public function allocateBooth(Event $event, int $areaNumber, array $excludeBoothIds = []): Booth
+    public function allocateBooth(Event $event, int $areaNumber, array $excludeBoothIds = [], bool $requireOpen = true): Booth
     {
         if (! TentLayout::area($areaNumber)) {
             throw new BookingException('Nomor area tenda tidak valid.');
@@ -192,10 +215,19 @@ class BoothMapService
             ->with(['zone', 'reservation.registrationItem.registration', 'reservation.sponsorshipRequest'])
             ->where('event_id', $event->id)
             ->where('type', 'umkm')
-            ->whereHas('zone', fn ($query) => $query->where('code', (string) $areaNumber)->where('is_active', true))
+            ->whereHas('zone', function ($query) use ($areaNumber, $requireOpen) {
+                $query->where('code', (string) $areaNumber);
+                if ($requireOpen) {
+                    $query->where('is_active', true);
+                }
+            })
             ->when($excludeBoothIds !== [], fn ($query) => $query->whereNotIn('id', $excludeBoothIds))
             ->orderBy('code')
             ->get();
+
+        if ($requireOpen && $booths->isEmpty()) {
+            throw new BookingException('Kotak '.$areaNumber.' sementara tidak dibuka untuk pendaftaran.');
+        }
 
         foreach ($booths as $booth) {
             if ($booth->state === 'available' && $booth->displayStatus() === 'available') {

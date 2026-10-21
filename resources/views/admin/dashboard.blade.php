@@ -159,22 +159,30 @@
     </section>
 
     <section class="mt-4 rounded-2xl bg-white p-4">
-        <h2 class="text-base font-bold">Kotak</h2>
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <h2 class="text-base font-bold">Kotak</h2>
+                <p class="text-sm text-slate-500">Tutup kotak agar tidak muncul di pilihan pendaftar. Pendaftaran umum tetap bisa dibuka.</p>
+            </div>
+        </div>
         <div class="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
             @foreach ($areas as $area)
                 @php
                     $areaTotal = (int) $area['total'];
                     $areaFilled = (int) $area['occupied'] + (int) $area['held'];
                     $areaFree = (int) $area['available'];
+                    $areaOpen = (bool) ($area['open'] ?? true);
                 @endphp
-                <article class="rounded-xl border border-slate-100 px-3 py-3">
+                <article class="rounded-xl border-2 px-3 py-3 {{ $areaOpen ? 'border-slate-100' : 'border-gold bg-gold-soft' }}">
                     <div class="flex items-start justify-between gap-2">
                         <div>
                             <p class="font-semibold">{{ $area['name'] }}</p>
                             <p class="text-xs text-slate-500">{{ $area['size_label'] }}</p>
                         </div>
-                        <p class="rounded-lg px-2 py-1 text-xs font-semibold {{ $areaFree > 0 ? 'bg-nu-soft text-nu-dark' : 'bg-slate-100 text-slate-500' }}">
-                            @if ($areaTotal === 0)
+                        <p class="rounded-lg px-2 py-1 text-xs font-semibold {{ ! $areaOpen ? 'bg-nu-dark text-white' : ($areaFree > 0 ? 'bg-nu-soft text-nu-dark' : 'bg-slate-100 text-slate-500') }}">
+                            @if (! $areaOpen)
+                                Ditutup
+                            @elseif ($areaTotal === 0)
                                 —
                             @elseif ($areaFree === 0)
                                 Penuh
@@ -190,6 +198,19 @@
                         <div style="flex: {{ max(0, $areaTotal - $areaFilled - (int) $area['blocked']) }} 1 0"></div>
                     </div>
                     <p class="mt-2 text-xs text-slate-500">{{ $area['occupied'] }} terisi · {{ $area['held'] }} dipesan · {{ $areaTotal }} slot</p>
+                    @if (auth()->user()->canPermission('booths.manage') && ! empty($area['zone_id']))
+                        <form method="POST" action="{{ route('admin.zones.toggle', $area['zone_id']) }}" class="mt-3">
+                            @csrf
+                            <input type="hidden" name="open" value="{{ $areaOpen ? '0' : '1' }}">
+                            <button
+                                type="submit"
+                                class="w-full rounded-xl px-3 py-2 text-xs font-bold {{ $areaOpen ? 'bg-nu-dark text-white' : 'bg-nu text-white' }}"
+                                @if ($areaOpen) onclick="return confirm('Sembunyikan {{ $area['name'] }} dari pilihan pendaftar?')" @endif
+                            >
+                                {{ $areaOpen ? 'Tutup kotak ini' : 'Buka kotak ini' }}
+                            </button>
+                        </form>
+                    @endif
                 </article>
             @endforeach
         </div>

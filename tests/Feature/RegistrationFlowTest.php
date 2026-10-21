@@ -448,6 +448,40 @@ class RegistrationFlowTest extends HsnTestCase
             ->assertDontSee('Nomor rekening');
     }
 
+    public function test_admin_can_hide_a_box_from_public_registration(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+        $zone = \App\Models\BoothZone::query()
+            ->where('event_id', Event()->id)
+            ->where('code', '2')
+            ->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('admin.zones.toggle', $zone), ['open' => '0'])
+            ->assertRedirect();
+
+        $this->assertFalse($zone->fresh()->is_active);
+
+        $this->post(route('register.applicant'), $this->applicant('081255500099', 'Kotak Tertutup'))
+            ->assertRedirect(route('register.booths'));
+
+        $this->get(route('register.booths'))
+            ->assertOk()
+            ->assertDontSee('"number":2', false);
+
+        $this->post(route('register.booths.store'), [
+            'area_numbers' => [2],
+            'quantities' => [2 => 1],
+            'with_tent' => [2 => '0'],
+        ])->assertRedirect()->assertSessionHasErrors('area_numbers');
+
+        $this->actingAs($admin)
+            ->post(route('admin.zones.toggle', $zone), ['open' => '1'])
+            ->assertRedirect();
+
+        $this->assertTrue($zone->fresh()->is_active);
+    }
+
     public function test_admin_can_temporarily_pause_and_resume_registration(): void
     {
         $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();

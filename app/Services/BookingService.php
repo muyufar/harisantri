@@ -385,10 +385,15 @@ class BookingService
             throw new BookingException('Kotak asal slot '.$item->booth_code.' tidak dikenali, jadi pendaftaran belum bisa diaktifkan.');
         }
 
-        return $maps->allocateBooth($registration->event, $area, array_values(array_unique(array_filter([
-            ...$usedBoothIds,
-            $stay ? $item->booth_id : null,
-        ]))));
+        return $maps->allocateBooth(
+            $registration->event,
+            $area,
+            array_values(array_unique(array_filter([
+                ...$usedBoothIds,
+                $stay ? $item->booth_id : null,
+            ]))),
+            requireOpen: false,
+        );
     }
 
     private function syncTotals(Registration $registration): void
@@ -453,7 +458,12 @@ class BookingService
                 throw new BookingException('Pendaftar sudah berada di kotak ini.');
             }
 
-            $booth = app(BoothMapService::class)->allocateBooth($registration->event, $areaNumber, array_filter([$item->booth_id]));
+            $booth = app(BoothMapService::class)->allocateBooth(
+                $registration->event,
+                $areaNumber,
+                array_filter([$item->booth_id]),
+                requireOpen: false,
+            );
             $expiresAt = $item->reservation?->expires_at;
             $from = $item->zone_name;
             $item->reservation?->delete();

@@ -175,4 +175,25 @@ class BoothController extends AdminController
 
         return back()->with('status', 'Zona diperbarui.');
     }
+
+    public function toggleZone(Request $request, BoothZone $zone, AuditLogger $audit)
+    {
+        abort_unless($zone->event_id === $this->event()->id, 404);
+        abort_unless($zone->type === 'umkm', 404);
+
+        $open = $request->boolean('open');
+        $zone->update(['is_active' => $open]);
+
+        $audit->log($open ? 'zone.opened' : 'zone.closed', $zone, [
+            'code' => $zone->code,
+            'name' => $zone->name,
+        ]);
+
+        return back()->with(
+            'status',
+            $open
+                ? $zone->name.' dibuka lagi untuk pendaftaran.'
+                : $zone->name.' ditutup sementara dari pilihan pendaftar.'
+        );
+    }
 }

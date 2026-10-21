@@ -16,7 +16,7 @@ class DashboardController extends AdminController
     public function __invoke(BoothMapService $maps)
     {
         $event = $this->event();
-        $stats = $maps->stats($event);
+        $stats = $maps->stats($event, activeZonesOnly: false);
         $base = Registration::query()->where('event_id', $event->id)->where('type', 'umkm');
 
         $activeStatuses = [
@@ -41,7 +41,7 @@ class DashboardController extends AdminController
         return view('admin.dashboard', [
             'event' => $event,
             'stats' => $stats,
-            'areas' => $maps->areaCards($event),
+            'areas' => $maps->areaCards($event, activeZonesOnly: false),
             'byStatus' => $byStatus,
             'registrations' => (clone $base)->count(),
             'sponsorships' => SponsorshipRequest::query()->where('event_id', $event->id)->count(),

@@ -97,6 +97,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/zona', [BoothController::class, 'zones'])->name('zones.index');
             Route::post('/zona', [BoothController::class, 'storeZone'])->name('zones.store');
             Route::patch('/zona/{zone}', [BoothController::class, 'updateZone'])->name('zones.update');
+            Route::post('/zona/{zone}/tampilkan', [BoothController::class, 'toggleZone'])->name('zones.toggle');
             Route::get('/peta', [BoothController::class, 'editor'])->name('map.edit');
             Route::post('/peta', [BoothController::class, 'saveLayout'])->name('map.update');
         });
