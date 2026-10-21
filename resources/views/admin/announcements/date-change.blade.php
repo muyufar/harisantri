@@ -5,9 +5,8 @@
 @section('content')
     <h1 class="text-2xl font-bold">Pengumuman perubahan jadwal</h1>
     <p class="mt-2 max-w-3xl text-sm text-slate-600">
-        Kirim teks WhatsApp berisi permohonan maaf dan tanggal baru. Lampiran JPG tidak bisa dikirim lewat tautan otomatis,
-        jadi flyer dilampirkan sebagai tautan gambar. Buka WhatsApp berurutan dengan jeda 5 detik (sekitar 12 pesan per menit).
-        Peramban biasanya memblokir popup otomatis; tekan tombol mulai sekali, lalu biarkan antrian berjalan.
+        WhatsApp tidak mengirim otomatis: sistem hanya membuka chat berisi teks siap kirim.
+        Klik <strong>Kirim</strong> di WhatsApp sebelum hitungan habis. Satu jendela dipakai berulang agar tidak diblokir popup.
     </p>
 
     <div class="mt-4 grid gap-4 lg:grid-cols-[280px_1fr]">
@@ -29,18 +28,30 @@
                     <p class="text-sm text-slate-500" x-text="summary()"></p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button type="button" class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" @click="start()" :disabled="running || done">Mulai kirim</button>
+                    <button type="button" class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" @click="start()" :disabled="running || done || !recipients.length">Mulai kirim</button>
                     <button type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold disabled:opacity-50" @click="pause()" :disabled="!running">Jeda</button>
-                    <button type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold disabled:opacity-50" @click="resume()" :disabled="running || done || index === 0">Lanjut</button>
+                    <button type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold disabled:opacity-50" @click="resume()" :disabled="running || done || openedCount() === 0">Lanjut otomatis</button>
+                    <button type="button" class="rounded-xl border border-nu px-4 py-2 text-sm font-semibold text-nu disabled:opacity-50" @click="sendNextNow()" :disabled="done || !current">Buka berikutnya sekarang</button>
                 </div>
             </div>
 
+            <p class="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700" x-show="error" x-text="error" x-cloak></p>
+
             <p class="mt-3 rounded-xl bg-gold-soft px-3 py-2 text-sm" x-show="current" x-cloak>
-                Sedang: <span class="font-semibold" x-text="current?.business"></span>
-                · <span x-text="current?.whatsapp"></span>
-                · <span x-text="current?.status"></span>
-                <template x-if="running && countdown > 0">
-                    <span> · buka lagi dalam <span class="font-semibold" x-text="countdown"></span> dtk</span>
+                <template x-if="running">
+                    <span>
+                        Klik <strong>Kirim</strong> di WhatsApp untuk
+                        <span class="font-semibold" x-text="current?.business"></span>
+                        (<span x-text="current?.whatsapp"></span>).
+                        Chat berikutnya dalam <span class="font-semibold" x-text="countdown"></span> dtk.
+                    </span>
+                </template>
+                <template x-if="!running">
+                    <span>
+                        Siap: <span class="font-semibold" x-text="current?.business"></span>
+                        · <span x-text="current?.whatsapp"></span>
+                        · <span x-text="current?.status"></span>
+                    </span>
                 </template>
             </p>
 
@@ -69,7 +80,7 @@
                                 <td x-text="row.status"></td>
                                 <td>
                                     <button type="button" class="text-nu underline" @click="openOne(i)">Buka</button>
-                                    <span class="ml-2 text-xs" x-text="sent[row.id] ? 'sudah dibuka' : ''"></span>
+                                    <span class="ml-2 text-xs text-slate-500" x-text="sent[row.id] ? 'chat dibuka' : ''"></span>
                                 </td>
                             </tr>
                         </template>
@@ -90,36 +101,64 @@ function announcementBlast(recipients, intervalSeconds) {
         countdown: 0,
         running: false,
         done: false,
+        error: '',
         sent: {},
+        waWindow: null,
         timer: null,
         tick: null,
         get current() {
             return this.recipients[this.index] || null;
         },
+        openedCount() {
+            return Object.keys(this.sent).length;
+        },
         summary() {
-            const opened = Object.keys(this.sent).length;
-            return opened + ' / ' + this.recipients.length + ' dibuka · jeda ' + this.intervalSeconds + ' detik';
+            return this.openedCount() + ' / ' + this.recipients.length + ' chat dibuka · jeda ' + this.intervalSeconds + ' detik';
+        },
+        navigate(url) {
+            this.error = '';
+            if (this.waWindow && !this.waWindow.closed) {
+                try {
+                    this.waWindow.location.href = url;
+                    this.waWindow.focus();
+                    return true;
+                } catch (e) {
+                    this.waWindow = null;
+                }
+            }
+            this.waWindow = window.open(url, 'hsnWaBlast');
+            if (!this.waWindow) {
+                this.error = 'Popup diblokir peramban. Izinkan popup untuk situs ini, lalu tekan Mulai kirim lagi.';
+                return false;
+            }
+            return true;
         },
         openOne(i) {
             const row = this.recipients[i];
             if (!row) return;
-            window.open(row.url, '_blank');
+            if (!this.navigate(row.url)) return;
             this.sent[row.id] = true;
             this.index = i;
+            this.done = false;
         },
         openCurrent() {
             if (!this.current) {
                 this.finish();
-                return;
+                return false;
             }
-            window.open(this.current.url, '_blank');
+            if (!this.navigate(this.current.url)) {
+                this.pause();
+                return false;
+            }
             this.sent[this.current.id] = true;
+            return true;
         },
         start() {
             if (!this.recipients.length) return;
             this.done = false;
+            this.error = '';
+            if (!this.openCurrent()) return;
             this.running = true;
-            this.openCurrent();
             this.queueNext();
         },
         pause() {
@@ -129,8 +168,24 @@ function announcementBlast(recipients, intervalSeconds) {
         },
         resume() {
             if (this.done) return;
+            this.error = '';
             this.running = true;
             this.queueNext();
+        },
+        sendNextNow() {
+            this.clearTimers();
+            this.error = '';
+            if (this.sent[this.current?.id] && this.index < this.recipients.length - 1) {
+                this.index += 1;
+            }
+            if (!this.openCurrent()) return;
+            if (this.index >= this.recipients.length - 1) {
+                this.finish();
+                return;
+            }
+            if (this.running) {
+                this.queueNext();
+            }
         },
         queueNext() {
             this.clearTimers();
@@ -145,7 +200,7 @@ function announcementBlast(recipients, intervalSeconds) {
             }, 1000);
             this.timer = setTimeout(() => {
                 this.index += 1;
-                this.openCurrent();
+                if (!this.openCurrent()) return;
                 this.queueNext();
             }, this.intervalSeconds * 1000);
         },
