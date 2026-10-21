@@ -10,6 +10,7 @@ use App\Services\PaymentService;
 use App\Support\Phone;
 use App\Support\TentLayout;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RegistrationController extends AdminController
 {
@@ -25,13 +26,37 @@ class RegistrationController extends AdminController
         $kotak = (int) $request->integer('kotak');
         $area = TentLayout::area($kotak);
         $tenda = $request->string('tenda')->toString();
+        $multi = $request->string('multi')->toString() === '1';
+
+        $activeStatuses = [
+            RegistrationStatus::AwaitingPayment,
+            RegistrationStatus::AwaitingVerification,
+            RegistrationStatus::PaymentRejected,
+            RegistrationStatus::Confirmed,
+        ];
+
+        $slotTotals = DB::table('registrations')
+            ->join('registration_items', 'registration_items.registration_id', '=', 'registrations.id')
+            ->where('registrations.event_id', $event->id)
+            ->where('registrations.type', 'umkm')
+            ->whereIn('registrations.status', array_map(fn (RegistrationStatus $status) => $status->value, $activeStatuses))
+            ->groupBy('registrations.whatsapp')
+            ->select('registrations.whatsapp', DB::raw('COUNT(registration_items.id) as slot_total'))
+            ->pluck('slot_total', 'whatsapp');
+
+        $multiWhatsapps = $slotTotals->filter(fn ($total) => (int) $total > 1)->keys();
 
         $registrations = Registration::query()
             ->with(['applicant', 'items', 'payment'])
+            ->withCount('items')
             ->where('event_id', $event->id)
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')))
             ->when($area, fn ($query) => $query->whereHas('items', fn ($items) => $items->where('zone_name', $area['name'])))
             ->when(in_array($tenda, ['0', '1'], true), fn ($query) => $query->whereHas('items', fn ($items) => $items->where('with_tent', $tenda === '1')))
+            ->when($multi, function ($query) use ($multiWhatsapps, $activeStatuses) {
+                $query->whereIn('status', $activeStatuses)
+                    ->whereIn('whatsapp', $multiWhatsapps->all());
+            })
             ->when($term !== '', function ($query) use ($like, $term) {
                 $digits = Phone::digits($term);
                 $phoneSearch = strlen($digits) >= 8 && preg_match('/^\+?[\d\s\-()]+$/', $term) === 1;
@@ -54,14 +79,21 @@ class RegistrationController extends AdminController
                         });
                 });
             })
-            ->latest()
+            ->when($multi, fn ($query) => $query->orderBy('whatsapp')->latest('id'), fn ($query) => $query->latest())
             ->paginate($perPage)
-            ->withQueryString();
+            ->withQueryString()
+            ->through(function (Registration $registration) use ($slotTotals) {
+                $registration->setAttribute('wa_slot_total', (int) ($slotTotals[$registration->whatsapp] ?? $registration->items_count));
+                $registration->setAttribute('is_multi_lapak', $registration->wa_slot_total > 1);
+
+                return $registration;
+            });
 
         return view('admin.registrations.index', [
             'registrations' => $registrations,
             'statuses' => RegistrationStatus::cases(),
             'areas' => TentLayout::areas(),
+            'multiWhatsappCount' => $multiWhatsapps->count(),
         ]);
     }
 

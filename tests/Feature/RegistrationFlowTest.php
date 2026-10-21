@@ -131,6 +131,12 @@ class RegistrationFlowTest extends HsnTestCase
             ->get(route('admin.registrations.index', ['tenda' => '1']))
             ->assertOk()
             ->assertDontSee('Dua Slot Satu Kotak');
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.index', ['multi' => '1']))
+            ->assertOk()
+            ->assertSee('Dua Slot Satu Kotak')
+            ->assertSee('WA 2 slot', false)
+            ->assertSee('Lebih dari 1 lapak', false);
     }
 
     public function test_admin_can_move_a_booth_to_another_box_of_the_same_size(): void
