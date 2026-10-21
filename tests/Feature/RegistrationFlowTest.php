@@ -193,6 +193,36 @@ class RegistrationFlowTest extends HsnTestCase
             ->assertSee('value="10" selected', false);
     }
 
+    public function test_admin_can_search_registrations_by_name_and_stall_box(): void
+    {
+        $booth = Booth::query()->whereHas('zone', fn ($query) => $query->where('code', '2'))->firstOrFail();
+        $other = Booth::query()->whereHas('zone', fn ($query) => $query->where('code', '3'))->firstOrFail();
+        app(\App\Services\BookingService::class)->create(Event(), $this->applicant('081277700001', 'Sulastri Snacks'), [
+            ['booth_id' => $booth->id, 'with_tent' => false],
+        ]);
+        app(\App\Services\BookingService::class)->create(Event(), $this->applicant('081277700002', 'Warung Lain'), [
+            ['booth_id' => $other->id, 'with_tent' => false],
+        ]);
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.index', ['q' => 'sulastri']))
+            ->assertOk()
+            ->assertSee('Sulastri Snacks')
+            ->assertDontSee('Warung Lain');
+
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.index', ['q' => 'Kotak 2']))
+            ->assertOk()
+            ->assertSee('Sulastri Snacks')
+            ->assertDontSee('Warung Lain');
+
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.index', ['q' => '2-']))
+            ->assertOk()
+            ->assertSee('Sulastri Snacks');
+    }
+
     public function test_status_lookup_hides_details_until_whatsapp_matches(): void
     {
         $booth = Booth::query()->where('type', 'umkm')->firstOrFail();

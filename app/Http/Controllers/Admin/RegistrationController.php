@@ -34,14 +34,24 @@ class RegistrationController extends AdminController
             ->when(in_array($tenda, ['0', '1'], true), fn ($query) => $query->whereHas('items', fn ($items) => $items->where('with_tent', $tenda === '1')))
             ->when($term !== '', function ($query) use ($like, $term) {
                 $digits = Phone::digits($term);
-                $query->where(function ($query) use ($like, $digits) {
+                $phoneSearch = strlen($digits) >= 8 && preg_match('/^\+?[\d\s\-()]+$/', $term) === 1;
+                $query->where(function ($query) use ($like, $digits, $phoneSearch) {
                     $query->where('code', 'like', $like)
-                        ->orWhere('whatsapp', 'like', '%'.$digits.'%')
+                        ->when($phoneSearch, fn ($query) => $query->orWhere('whatsapp', 'like', '%'.$digits.'%'))
                         ->orWhereHas('applicant', fn ($applicant) => $applicant
                             ->where('business_name', 'like', $like)
                             ->orWhere('full_name', 'like', $like)
-                            ->orWhere('nik', 'like', $like))
-                        ->orWhereHas('items', fn ($items) => $items->where('booth_code', 'like', $like));
+                            ->orWhere('nik', 'like', $like)
+                            ->orWhere('email', 'like', $like)
+                            ->orWhere('address', 'like', $like)
+                            ->orWhere('product_type', 'like', $like)
+                            ->orWhere('product_description', 'like', $like))
+                        ->orWhereHas('items', function ($items) use ($like) {
+                            $items->where(function ($items) use ($like) {
+                                $items->where('booth_code', 'like', $like)
+                                    ->orWhere('zone_name', 'like', $like);
+                            });
+                        });
                 });
             })
             ->latest()
