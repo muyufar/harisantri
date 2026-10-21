@@ -3,10 +3,10 @@
 @section('content')
     <h1 class="text-2xl font-bold">Informasi event</h1>
 
-    <div class="mt-4 rounded-2xl border {{ $config->registrationPaused() ? 'border-red-200 bg-red-50' : 'border-nu/20 bg-nu-soft' }} p-4">
+    <div class="mt-4 rounded-2xl border-2 p-4 {{ $config->registrationPaused() ? 'border-gold bg-gold-soft' : 'border-nu bg-nu-soft' }}">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-                <p class="font-semibold {{ $config->registrationPaused() ? 'text-red-800' : 'text-nu-dark' }}">
+                <p class="text-base font-bold {{ $config->registrationPaused() ? 'text-nu-dark' : 'text-nu' }}">
                     Status pendaftaran:
                     {{ $config->registrationPaused() ? 'Sementara ditutup' : ($event->registrationIsOpen() ? 'Terbuka' : 'Ditutup (jadwal)') }}
                 </p>
@@ -15,18 +15,18 @@
                     Pembayaran dan unggah bukti untuk yang sudah mendaftar tetap berjalan.
                 </p>
             </div>
-            <form method="POST" action="{{ route('admin.settings.registration') }}" class="shrink-0">
+            <form method="POST" action="{{ route('admin.settings.registration') }}" class="w-full shrink-0 sm:w-auto">
                 @csrf
                 @if ($config->registrationPaused())
                     <input type="hidden" name="pause" value="0">
-                    <button class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white" type="submit">Buka kembali</button>
+                    <button class="w-full rounded-xl bg-nu px-5 py-3 text-sm font-bold text-white sm:w-auto" type="submit">Buka kembali pendaftaran</button>
                 @else
                     <input type="hidden" name="pause" value="1">
-                    <label class="mb-2 block text-xs text-slate-600">
+                    <label class="mb-2 block text-xs font-medium text-slate-600">
                         Pesan (opsional)
-                        <input class="mt-1 w-full min-w-[14rem] rounded-xl border border-slate-200 px-3 py-2 text-sm" name="message" maxlength="500" placeholder="Mis. Slot sedang ditinjau panitia">
+                        <input class="mt-1 w-full min-w-[14rem] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-ink" name="message" maxlength="500" placeholder="Mis. Slot sedang ditinjau panitia">
                     </label>
-                    <button class="rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white" type="submit" onclick="return confirm('Tutup sementara pendaftaran publik?')">Tutup sementara</button>
+                    <button class="w-full rounded-xl bg-nu-dark px-5 py-3 text-sm font-bold text-white sm:w-auto" type="submit" onclick="return confirm('Tutup sementara pendaftaran publik?')">Tutup sementara pendaftaran</button>
                 @endif
             </form>
         </div>
