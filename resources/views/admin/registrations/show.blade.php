@@ -38,6 +38,13 @@
                             </select>
                             <button class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white">Pindah kotak</button>
                         </form>
+                        @if ($registration->items->count() > 1)
+                            <form method="POST" action="{{ route('admin.registrations.drop', $registration) }}" class="mt-2" onsubmit="return confirm('Hapus slot {{ $item->booth_code }} saja? Slot lain tetap ada dan total dihitung ulang.')">
+                                @csrf
+                                <input type="hidden" name="item_id" value="{{ $item->id }}">
+                                <button class="rounded-xl border border-nu-dark px-4 py-2 text-sm font-semibold text-nu-dark">Hapus slot ini</button>
+                            </form>
+                        @endif
                     @endif
                 </div>
             @endforeach

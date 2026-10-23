@@ -145,6 +145,29 @@ class RegistrationController extends AdminController
         return back()->with('status', 'Lapak dipindah ke '.$area['name'].'. Total pendaftaran '.rupiah($registration->fresh()->grand_total).'.');
     }
 
+    public function drop(Request $request, Registration $registration, BookingService $booking)
+    {
+        $data = $request->validate([
+            'item_id' => ['required', 'integer'],
+        ]);
+
+        $item = $registration->items()->whereKey($data['item_id'])->first();
+        if (! $item) {
+            return back()->withErrors(['status' => 'Slot yang dipilih tidak ditemukan.']);
+        }
+
+        try {
+            abort_unless($registration->event_id === $this->event()->id, 404);
+            $booking->dropItem($registration, $item);
+        } catch (BookingException $exception) {
+            return back()->withErrors(['status' => $exception->getMessage()]);
+        }
+
+        $fresh = $registration->fresh();
+
+        return back()->with('status', 'Slot '.$item->booth_code.' dilepas. Total pendaftaran sekarang '.rupiah($fresh->grand_total).'. Jika pembayaran sudah masuk lebih besar, refund dilakukan manual.');
+    }
+
     public function restore(Request $request, Registration $registration, BookingService $booking)
     {
         $data = $request->validate([

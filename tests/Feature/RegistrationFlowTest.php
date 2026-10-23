@@ -139,6 +139,38 @@ class RegistrationFlowTest extends HsnTestCase
             ->assertSee('Lebih dari 1 lapak', false);
     }
 
+    public function test_admin_can_drop_one_slot_from_a_multi_slot_registration(): void
+    {
+        $booths = Booth::query()->whereHas('zone', fn ($query) => $query->where('code', '2'))->limit(2)->get();
+        $registration = app(\App\Services\BookingService::class)->create(Event(), $this->applicant('081266600088', 'Lepas Satu Slot'), [
+            ['booth_id' => $booths[0]->id, 'with_tent' => false],
+            ['booth_id' => $booths[1]->id, 'with_tent' => false],
+        ]);
+        $drop = $registration->items()->firstOrFail();
+        $keep = $registration->items()->whereKeyNot($drop->id)->firstOrFail();
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->post(route('admin.registrations.drop', $registration), ['item_id' => $drop->id])
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        $registration->refresh();
+        $this->assertSame(1, $registration->items()->count());
+        $this->assertSame($keep->id, $registration->items()->first()->id);
+        $this->assertSame(100000, $registration->grand_total);
+        $this->assertSame(100000, $registration->payment()->first()->amount);
+        $this->assertNull($drop->booth->fresh()->reservation);
+        $this->assertDatabaseMissing('registration_items', ['id' => $drop->id]);
+
+        $this->actingAs($admin)
+            ->post(route('admin.registrations.drop', $registration), ['item_id' => $keep->id])
+            ->assertRedirect()
+            ->assertSessionHasErrors('status');
+
+        $this->assertSame(1, $registration->fresh()->items()->count());
+    }
+
     public function test_admin_can_move_a_booth_to_another_box_of_the_same_size(): void
     {
         $booth = Booth::query()->whereHas('zone', fn ($query) => $query->where('code', '2'))->firstOrFail();

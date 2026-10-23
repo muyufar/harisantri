@@ -428,6 +428,46 @@ class BookingService
         return null;
     }
 
+    public function dropItem(Registration $registration, RegistrationItem $item): Registration
+    {
+        return DB::transaction(function () use ($registration, $item) {
+            $registration = Registration::query()->lockForUpdate()->findOrFail($registration->id);
+
+            if (! in_array($registration->status, [
+                RegistrationStatus::AwaitingPayment,
+                RegistrationStatus::AwaitingVerification,
+                RegistrationStatus::PaymentRejected,
+                RegistrationStatus::Confirmed,
+            ], true)) {
+                throw new BookingException('Pendaftaran yang sudah tidak aktif tidak bisa dikurangi slotnya.');
+            }
+
+            $item = RegistrationItem::query()->lockForUpdate()->findOrFail($item->id);
+            if ($item->registration_id !== $registration->id) {
+                throw new BookingException('Slot ini bukan bagian dari pendaftaran tersebut.');
+            }
+
+            if ($registration->items()->count() < 2) {
+                throw new BookingException('Ini satu-satunya slot. Batalkan seluruh pendaftaran jika ingin melepasnya.');
+            }
+
+            $slot = $item->booth_code;
+            $zone = $item->zone_name;
+            $item->reservation?->delete();
+            $item->delete();
+            $this->syncTotals($registration);
+
+            $this->audit->log('registration.item_removed', $registration, [
+                'code' => $registration->code,
+                'slot' => $slot,
+                'zone' => $zone,
+                'grand_total' => $registration->fresh()->grand_total,
+            ]);
+
+            return $registration->fresh(['items']);
+        });
+    }
+
     public function relocate(Registration $registration, RegistrationItem $item, int $areaNumber): Registration
     {
         $area = TentLayout::area($areaNumber);
