@@ -1,7 +1,12 @@
 @extends('layouts.admin')
 
 @section('content')
-    <h1 class="text-2xl font-bold">Pendaftar UMKM</h1>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-2xl font-bold">Pendaftar UMKM</h1>
+        @if (auth()->user()->canPermission('registrations.manage'))
+            <a class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white" href="{{ route('admin.registrations.create') }}">Daftarkan peserta</a>
+        @endif
+    </div>
     <form class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap" method="GET">
         <input class="min-w-[12rem] flex-1 rounded-xl border border-slate-200 px-3 py-2" name="q" value="{{ request('q') }}" placeholder="Nama usaha, PIC, NIK, WhatsApp, email, kotak, slot, atau kode">
         <select class="rounded-xl border border-slate-200 px-3 py-2" name="kotak" onchange="this.form.requestSubmit()">

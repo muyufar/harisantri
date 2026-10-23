@@ -139,6 +139,39 @@ class RegistrationFlowTest extends HsnTestCase
             ->assertSee('Lebih dari 1 lapak', false);
     }
 
+    public function test_admin_can_register_a_participant_from_the_backoffice(): void
+    {
+        $admin = User::query()->where('email', 'admin@pcnu-magelang.test')->firstOrFail();
+        $event = Event();
+        \App\Models\EventSetting::query()->updateOrCreate(
+            ['event_id' => $event->id, 'key' => 'registration_paused'],
+            ['value' => '1']
+        );
+        $zone = \App\Models\BoothZone::query()->where('event_id', $event->id)->where('code', '2')->firstOrFail();
+        $zone->update(['is_active' => false]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.registrations.create'))
+            ->assertOk()
+            ->assertSee('Daftarkan peserta')
+            ->assertSee('Kotak 2');
+
+        $this->actingAs($admin)
+            ->post(route('admin.registrations.store'), $this->applicant('081277700001', 'Daftar Backoffice') + [
+                'mark_paid' => '1',
+                'slots' => [
+                    2 => ['quantity' => 1, 'with_tent' => '0'],
+                ],
+            ])
+            ->assertRedirect();
+
+        $registration = Registration::query()->where('whatsapp', 'like', '%81277700001')->firstOrFail();
+        $this->assertSame(RegistrationStatus::Confirmed, $registration->status);
+        $this->assertSame(100000, $registration->grand_total);
+        $this->assertSame('Kotak 2', $registration->items()->first()->zone_name);
+        $this->assertSame('verified', $registration->payment->status->value);
+    }
+
     public function test_admin_can_drop_one_slot_from_a_multi_slot_registration(): void
     {
         $booths = Booth::query()->whereHas('zone', fn ($query) => $query->where('code', '2'))->limit(2)->get();

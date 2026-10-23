@@ -131,6 +131,7 @@ class BoothMapService
                 'h' => $area['h'],
                 'open' => $open,
                 'total' => $rows->count(),
+                'stock' => $rows->where('status', 'available')->count(),
                 'available' => $available,
                 'held' => $rows->where('status', 'held')->count(),
                 'occupied' => $rows->where('status', 'occupied')->count(),

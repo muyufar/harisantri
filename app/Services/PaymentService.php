@@ -53,6 +53,50 @@ class PaymentService
         });
     }
 
+    public function recordOffline(Registration $registration, User $admin): Registration
+    {
+        return DB::transaction(function () use ($registration, $admin) {
+            $registration = Registration::query()->lockForUpdate()->findOrFail($registration->id);
+
+            if ($registration->status !== RegistrationStatus::AwaitingPayment) {
+                throw new BookingException('Pembayaran offline hanya bisa dicatat untuk pendaftaran yang baru menunggu pembayaran.');
+            }
+
+            $payment = $registration->payment()->lockForUpdate()->firstOrFail();
+            $payment->update([
+                'status' => PaymentStatus::Verified,
+                'amount' => $registration->grand_total,
+                'submitted_at' => now(),
+                'verified_at' => now(),
+            ]);
+
+            $registration->update([
+                'status' => RegistrationStatus::Confirmed,
+                'confirmed_at' => now(),
+                'hold_expires_at' => null,
+            ]);
+
+            $registration->items()->with('reservation')->get()->each(function ($item) {
+                $item->reservation?->update(['expires_at' => null]);
+            });
+
+            PaymentVerification::create([
+                'payment_id' => $payment->id,
+                'user_id' => $admin->id,
+                'decision' => 'approved',
+                'reason' => 'Didaftarkan panitia dan dicatat sudah bayar.',
+            ]);
+
+            $this->audit->log('payment.approved', $registration, [
+                'code' => $registration->code,
+                'amount' => $payment->amount,
+                'source' => 'backoffice',
+            ]);
+
+            return $registration->fresh(['payment', 'items']);
+        });
+    }
+
     public function approve(Registration $registration, User $admin): Registration
     {
         return DB::transaction(function () use ($registration, $admin) {

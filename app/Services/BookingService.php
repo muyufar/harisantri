@@ -93,9 +93,9 @@ class BookingService
      * @param  array<string, mixed>  $applicantData
      * @param  array<int, array{booth_id: int, with_tent: bool}>  $selections
      */
-    public function create(Event $event, array $applicantData, array $selections): Registration
+    public function create(Event $event, array $applicantData, array $selections, bool $skipOpenCheck = false): Registration
     {
-        if (! $event->registrationIsOpen()) {
+        if (! $skipOpenCheck && ! $event->registrationIsOpen()) {
             throw new BookingException($event->config()->registrationClosedMessage());
         }
 

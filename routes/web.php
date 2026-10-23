@@ -60,6 +60,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('/keluar', [AuthController::class, 'destroy'])->name('logout');
         Route::get('/', DashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
 
+        Route::middleware('permission:registrations.manage')->group(function () {
+            Route::get('/pendaftaran/baru', [AdminRegistrationController::class, 'create'])->name('registrations.create');
+            Route::post('/pendaftaran/baru', [AdminRegistrationController::class, 'store'])->name('registrations.store');
+        });
+
         Route::middleware('permission:registrations.view')->group(function () {
             Route::get('/pendaftaran', [AdminRegistrationController::class, 'index'])->name('registrations.index');
             Route::get('/pendaftaran/{registration}', [AdminRegistrationController::class, 'show'])->name('registrations.show');
