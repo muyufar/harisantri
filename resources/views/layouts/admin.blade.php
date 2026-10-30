@@ -25,6 +25,7 @@
             ['admin.settings.edit', 'Informasi event', 'settings.manage'],
             ['admin.users.index', 'Akun panitia', 'users.manage'],
             ['admin.reports.index', 'Laporan', 'reports.export'],
+            ['admin.finance.index', 'Keuangan', 'finance.manage'],
             ['admin.checkin.index', 'Check-in', 'checkin.perform'],
             ['admin.audit.index', 'Audit', 'audit.view'],
         ];

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\BoothController;
 use App\Http\Controllers\Admin\CheckinController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Admin\PriceController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 use App\Http\Controllers\Admin\ReportController;
@@ -129,6 +130,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('permission:reports.export')->group(function () {
             Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
             Route::get('/laporan/unduh', [ReportController::class, 'download'])->name('reports.download');
+        });
+
+        Route::middleware('permission:finance.manage')->group(function () {
+            Route::get('/keuangan', [FinanceController::class, 'index'])->name('finance.index');
+            Route::post('/keuangan', [FinanceController::class, 'store'])->name('finance.store');
+            Route::delete('/keuangan/{entry}', [FinanceController::class, 'destroy'])->name('finance.destroy');
         });
 
         Route::middleware('permission:checkin.perform')->group(function () {
