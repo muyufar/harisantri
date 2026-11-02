@@ -48,7 +48,6 @@ class FinanceController extends AdminController
             'otherIncome' => $otherIncome,
             'expense' => $expense,
             'balance' => $boothIncome + $otherIncome - $expense,
-            'types' => LedgerType::cases(),
             'categories' => [
                 LedgerType::Income->value => LedgerType::Income->categories(),
                 LedgerType::Expense->value => LedgerType::Expense->categories(),
@@ -88,7 +87,12 @@ class FinanceController extends AdminController
             'category' => $entry->category,
         ]);
 
-        return back()->with('status', 'Catatan keuangan disimpan.');
+        return back()->with(
+            'status',
+            $type === LedgerType::Income
+                ? 'Uang masuk selain UMKM dicatat.'
+                : 'Pengeluaran dicatat.'
+        );
     }
 
     public function destroy(LedgerEntry $entry, AuditLogger $audit)

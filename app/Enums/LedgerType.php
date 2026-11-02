@@ -19,7 +19,7 @@ enum LedgerType: string
     public function categories(): array
     {
         return match ($this) {
-            self::Income => ['Donasi', 'Sponsorship', 'Lainnya'],
+            self::Income => ['Donasi', 'Sponsorship', 'Bantuan instansi', 'Iuran', 'Penjualan lain', 'Lainnya'],
             self::Expense => ['Konsumsi', 'Sewa peralatan', 'Transport', 'Cetak', 'Tenda & dekorasi', 'Operasional', 'Lainnya'],
         };
     }

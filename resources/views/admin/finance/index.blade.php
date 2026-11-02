@@ -5,7 +5,8 @@
 @section('content')
     <h1 class="text-2xl font-bold">Pencatatan keuangan</h1>
     <p class="mt-2 max-w-3xl text-sm text-slate-600">
-        Pemasukan lapak diambil otomatis dari pembayaran yang sudah diterima. Donasi, sponsorship yang sudah cair, dan pengeluaran panitia dicatat di buku kas ini.
+        Pemasukan lapak UMKM masuk otomatis dari pembayaran yang sudah diterima.
+        Uang lain, seperti donasi, sponsorship yang sudah cair, bantuan instansi, atau iuran, dicatat lewat formulir di bawah dan tidak tercampur dengan lapak.
     </p>
 
     <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -14,7 +15,7 @@
             <p class="mt-1 text-xl font-bold text-nu-dark">{{ rupiah($boothIncome) }}</p>
         </article>
         <article class="rounded-2xl bg-white p-4">
-            <p class="text-xs font-medium text-slate-500">Pemasukan lain</p>
+            <p class="text-xs font-medium text-slate-500">Uang masuk selain UMKM</p>
             <p class="mt-1 text-xl font-bold">{{ rupiah($otherIncome) }}</p>
         </article>
         <article class="rounded-2xl bg-gold-soft p-4">
@@ -27,43 +28,67 @@
         </article>
     </div>
 
-    <form
-        method="POST"
-        action="{{ route('admin.finance.store') }}"
-        class="mt-4 grid gap-3 rounded-2xl bg-white p-4 md:grid-cols-2"
-        x-data="{ type: @js(old('type', 'expense')), categories: @js($categories) }"
-    >
-        @csrf
-        <label class="text-sm">
-            Jenis
-            <select class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" name="type" x-model="type" required>
-                @foreach ($types as $type)
-                    <option value="{{ $type->value }}">{{ $type->label() }}</option>
-                @endforeach
-            </select>
-        </label>
-        <label class="text-sm">
-            Kategori
-            <select class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" name="category" required>
-                <template x-for="category in categories[type] || []" :key="category">
-                    <option :value="category" x-text="category" :selected="category === @js(old('category'))"></option>
-                </template>
-            </select>
-        </label>
-        <label class="text-sm">
-            Nominal
-            <input class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" type="number" name="amount" min="1" value="{{ old('amount') }}" required>
-        </label>
-        <label class="text-sm">
-            Tanggal
-            <input class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" type="date" name="occurred_on" value="{{ old('occurred_on', now()->timezone('Asia/Jakarta')->toDateString()) }}" required>
-        </label>
-        <label class="text-sm md:col-span-2">
-            Keterangan
-            <input class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" name="description" maxlength="500" value="{{ old('description') }}" placeholder="Contoh: sewa sound system" required>
-        </label>
-        <button class="rounded-xl bg-nu px-4 py-3 text-sm font-semibold text-white md:col-span-2">Simpan catatan</button>
-    </form>
+    <div class="mt-4 grid gap-4 xl:grid-cols-2">
+        <form method="POST" action="{{ route('admin.finance.store') }}" class="grid gap-3 rounded-2xl border-2 border-nu bg-white p-4">
+            @csrf
+            <input type="hidden" name="type" value="income">
+            <div>
+                <h2 class="font-bold text-nu">Uang masuk selain UMKM</h2>
+                <p class="mt-1 text-sm text-slate-600">Donasi, sponsorship yang sudah diterima, bantuan instansi, iuran, atau penjualan lain.</p>
+            </div>
+            <label class="text-sm">
+                Sumber
+                <select class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" name="category" required>
+                    @foreach ($categories['income'] as $category)
+                        <option value="{{ $category }}" @selected(old('type', 'income') === 'income' && old('category') === $category)>{{ $category }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="text-sm">
+                Nominal
+                <input class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" type="number" name="amount" min="1" value="{{ old('type') === 'income' ? old('amount') : '' }}" required>
+            </label>
+            <label class="text-sm">
+                Tanggal diterima
+                <input class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" type="date" name="occurred_on" value="{{ old('type') === 'income' ? old('occurred_on') : now()->timezone('Asia/Jakarta')->toDateString() }}" required>
+            </label>
+            <label class="text-sm">
+                Dari siapa / keterangan
+                <input class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" name="description" maxlength="500" value="{{ old('type') === 'income' ? old('description') : '' }}" placeholder="Contoh: Donasi MWCNU Mertoyudan" required>
+            </label>
+            <button class="rounded-xl bg-nu px-4 py-3 text-sm font-semibold text-white">Catat uang masuk</button>
+        </form>
+
+        <form method="POST" action="{{ route('admin.finance.store') }}" class="grid content-start gap-3 rounded-2xl bg-white p-4">
+            @csrf
+            <input type="hidden" name="type" value="expense">
+            <div>
+                <h2 class="font-bold">Pengeluaran</h2>
+                <p class="mt-1 text-sm text-slate-600">Biaya panitia yang keluar dari kas kegiatan.</p>
+            </div>
+            <label class="text-sm">
+                Kategori
+                <select class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" name="category" required>
+                    @foreach ($categories['expense'] as $category)
+                        <option value="{{ $category }}" @selected(old('type') === 'expense' && old('category') === $category)>{{ $category }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="text-sm">
+                Nominal
+                <input class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" type="number" name="amount" min="1" value="{{ old('type') === 'expense' ? old('amount') : '' }}" required>
+            </label>
+            <label class="text-sm">
+                Tanggal
+                <input class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" type="date" name="occurred_on" value="{{ old('type') === 'expense' ? old('occurred_on') : now()->timezone('Asia/Jakarta')->toDateString() }}" required>
+            </label>
+            <label class="text-sm">
+                Keterangan
+                <input class="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2" name="description" maxlength="500" value="{{ old('type') === 'expense' ? old('description') : '' }}" placeholder="Contoh: sewa sound system" required>
+            </label>
+            <button class="rounded-xl bg-nu-dark px-4 py-3 text-sm font-semibold text-white">Catat pengeluaran</button>
+        </form>
+    </div>
 
     <form class="mt-4 flex gap-2" method="GET">
         <select class="rounded-xl border border-slate-200 px-3 py-2 text-sm" name="type" onchange="this.form.requestSubmit()">

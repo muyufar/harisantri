@@ -20,7 +20,9 @@ class FinanceLedgerTest extends HsnTestCase
             ->get(route('admin.finance.index'))
             ->assertOk()
             ->assertSee('Pencatatan keuangan')
-            ->assertSee('Pemasukan lapak');
+            ->assertSee('Pemasukan lapak')
+            ->assertSee('Uang masuk selain UMKM')
+            ->assertSee('Catat uang masuk');
 
         $this->actingAs($finance)
             ->post(route('admin.finance.store'), [
