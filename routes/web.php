@@ -136,6 +136,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/keuangan', [FinanceController::class, 'index'])->name('finance.index');
             Route::post('/keuangan', [FinanceController::class, 'store'])->name('finance.store');
             Route::delete('/keuangan/{entry}', [FinanceController::class, 'destroy'])->name('finance.destroy');
+            Route::get('/keuangan/unduh', [FinanceController::class, 'export'])->name('finance.export');
         });
 
         Route::middleware('permission:checkin.perform')->group(function () {

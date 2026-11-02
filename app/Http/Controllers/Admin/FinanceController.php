@@ -7,6 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Models\LedgerEntry;
 use App\Models\Payment;
 use App\Services\AuditLogger;
+use App\Services\ReportExporter;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -108,5 +109,14 @@ class FinanceController extends AdminController
         $entry->delete();
 
         return back()->with('status', 'Catatan keuangan dihapus.');
+    }
+
+    public function export(Request $request, ReportExporter $exporter)
+    {
+        $data = $request->validate([
+            'format' => ['required', 'in:csv,xlsx,pdf'],
+        ]);
+
+        return $exporter->download($this->event(), 'finance', $data['format']);
     }
 }

@@ -3,11 +3,20 @@
 @section('title', 'Keuangan')
 
 @section('content')
-    <h1 class="text-2xl font-bold">Pencatatan keuangan</h1>
-    <p class="mt-2 max-w-3xl text-sm text-slate-600">
-        Pemasukan lapak UMKM masuk otomatis dari pembayaran yang sudah diterima.
-        Uang lain, seperti donasi, sponsorship yang sudah cair, bantuan instansi, atau iuran, dicatat lewat formulir di bawah dan tidak tercampur dengan lapak.
-    </p>
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold">Pencatatan keuangan</h1>
+            <p class="mt-2 max-w-3xl text-sm text-slate-600">
+                Pemasukan lapak UMKM masuk otomatis dari pembayaran yang sudah diterima.
+                Uang lain, seperti donasi, sponsorship yang sudah cair, bantuan instansi, atau iuran, dicatat lewat formulir di bawah dan tidak tercampur dengan lapak.
+            </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a class="rounded-xl border-2 border-nu px-4 py-2 text-sm font-semibold text-nu" href="{{ route('admin.finance.export', ['format' => 'csv']) }}">Export CSV</a>
+            <a class="rounded-xl border-2 border-nu px-4 py-2 text-sm font-semibold text-nu" href="{{ route('admin.finance.export', ['format' => 'xlsx']) }}">Export Excel</a>
+            <a class="rounded-xl bg-nu px-4 py-2 text-sm font-semibold text-white" href="{{ route('admin.finance.export', ['format' => 'pdf']) }}">Export PDF</a>
+        </div>
+    </div>
 
     <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <article class="rounded-2xl bg-nu-soft p-4">

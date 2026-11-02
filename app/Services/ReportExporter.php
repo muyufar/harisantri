@@ -2,7 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\LedgerType;
+use App\Enums\PaymentStatus;
 use App\Models\Event;
+use App\Models\LedgerEntry;
+use App\Models\Payment;
 use App\Models\Registration;
 use App\Models\SponsorshipRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -79,21 +83,59 @@ class ReportExporter
 
     private function financeRows(Event $event): array
     {
-        $rows = [['Kode', 'Usaha', 'Nominal', 'Status bayar', 'Status daftar', 'Bukti diunggah', 'Diverifikasi']];
+        $boothIncome = (int) Payment::query()
+            ->where('status', PaymentStatus::Verified)
+            ->whereHas('registration', fn ($query) => $query->where('event_id', $event->id))
+            ->sum('amount');
+        $otherIncome = (int) LedgerEntry::query()
+            ->where('event_id', $event->id)
+            ->where('type', LedgerType::Income)
+            ->sum('amount');
+        $expense = (int) LedgerEntry::query()
+            ->where('event_id', $event->id)
+            ->where('type', LedgerType::Expense)
+            ->sum('amount');
+
+        $rows = [
+            ['Ringkasan', 'Nominal', '', '', '', '', ''],
+            ['Pemasukan lapak UMKM', $boothIncome, '', '', '', '', ''],
+            ['Uang masuk selain UMKM', $otherIncome, '', '', '', '', ''],
+            ['Pengeluaran', $expense, '', '', '', '', ''],
+            ['Saldo', $boothIncome + $otherIncome - $expense, '', '', '', '', ''],
+            ['', '', '', '', '', '', ''],
+            ['Jenis', 'Referensi', 'Kategori / usaha', 'Nominal', 'Status', 'Tanggal', 'Keterangan'],
+        ];
 
         Registration::query()
             ->with(['applicant', 'payment'])
             ->where('event_id', $event->id)
-            ->orderByDesc('id')
+            ->whereHas('payment', fn ($query) => $query->where('status', PaymentStatus::Verified))
+            ->orderBy('id')
             ->each(function (Registration $registration) use (&$rows) {
                 $rows[] = [
+                    'Pemasukan lapak',
                     $registration->code,
                     $registration->applicant->business_name,
                     $registration->payment?->amount ?? $registration->grand_total,
                     $registration->payment?->status->label() ?? '-',
-                    $registration->status->label(),
-                    $registration->payment?->submitted_at?->timezone('Asia/Jakarta')->format('Y-m-d H:i') ?? '-',
                     $registration->payment?->verified_at?->timezone('Asia/Jakarta')->format('Y-m-d H:i') ?? '-',
+                    'Pembayaran lapak UMKM',
+                ];
+            });
+
+        LedgerEntry::query()
+            ->where('event_id', $event->id)
+            ->orderBy('occurred_on')
+            ->orderBy('id')
+            ->each(function (LedgerEntry $entry) use (&$rows) {
+                $rows[] = [
+                    $entry->type->label(),
+                    'BK-'.$entry->id,
+                    $entry->category,
+                    $entry->amount,
+                    'Dicatat',
+                    $entry->occurred_on->format('Y-m-d'),
+                    $entry->description,
                 ];
             });
 

@@ -22,7 +22,10 @@ class FinanceLedgerTest extends HsnTestCase
             ->assertSee('Pencatatan keuangan')
             ->assertSee('Pemasukan lapak')
             ->assertSee('Uang masuk selain UMKM')
-            ->assertSee('Catat uang masuk');
+            ->assertSee('Catat uang masuk')
+            ->assertSee('Export CSV')
+            ->assertSee('Export Excel')
+            ->assertSee('Export PDF');
 
         $this->actingAs($finance)
             ->post(route('admin.finance.store'), [
@@ -58,5 +61,10 @@ class FinanceLedgerTest extends HsnTestCase
             ->assertRedirect();
 
         $this->assertDatabaseMissing('ledger_entries', ['id' => $income->id]);
+
+        $this->actingAs($finance)
+            ->get(route('admin.finance.export', ['format' => 'csv']))
+            ->assertOk()
+            ->assertHeader('content-disposition');
     }
 }
