@@ -28,7 +28,12 @@
         </article>
     </div>
 
-    <div class="mt-4 grid gap-4 xl:grid-cols-2">
+    <style>
+        @media (min-width: 1024px) {
+            .finance-forms { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+        }
+    </style>
+    <div class="finance-forms mt-4 grid gap-4">
         <form method="POST" action="{{ route('admin.finance.store') }}" class="grid gap-3 rounded-2xl border-2 border-nu bg-white p-4">
             @csrf
             <input type="hidden" name="type" value="income">
